@@ -1,4 +1,10 @@
-setwd("~/github/appr/Scripts")       
+
+workingDirectory = "E:/Github/appr/"                # For Windows
+#workingDirectory = "home/pdell/github/appr/"       # For Linux
+
+setwd(workingDirectory)
+
+# -------------------------------------------------------------------------------------------
 
 # Loading needed packages
 library(Metrics)    # For RMSE
@@ -9,11 +15,8 @@ library(ggplot2)
 library(scales)
 
 # Loading entire homemade R library
-source("/home/pcdell/github/appr/Lib/")
-source("/home/pcdell/github/appr/Lib/f_isFileReachable.R")  # A enlever ultérieurement
-source("/home/pcdell/github/appr/Lib/f_StatisticCriterias.R")  # A enlever ultérieurement
-
-# amelioration : mieux gérer les paths !
+files <- list.files(paste(workingDirectory,"Lib/"), pattern = "^.*[Rr]$", include.dirs = FALSE, full.names = TRUE)
+for (f in files) source(f)
 
 # User inputs ----------------------------------------------------------------------------------
 
@@ -24,7 +27,7 @@ yearStart <- 2018
 yearEnd <- 2020
 
 # Piezometer attributes textfile
-caracPiezo <- "~/github/appr/Data/liste_piezos.txt" 
+caracPiezo <- paste(workingDirectory,"Data/liste_piezos.txt", sep = "")
 
 # Pdf output filename
 outputPdfFile <- "output_piezo.pdf" 
@@ -79,7 +82,7 @@ matData <- matrix(data = NA, nrow = nbDays, ncol = 2*nbPiezo+1)
 # Observation data storage loop
 for (i in (1:nbPiezo))
 {
-  fileObs <- paste('~/github/appr/Data/H_SEINE/',properties[i,3],".dat",sep = "")
+  fileObs <- paste(workingDirectory,"Data/H_SEINE/",properties[i,3],".dat",sep = "")
   
   f_isFileReachable(fileObs)
     
@@ -117,7 +120,7 @@ for (y in (yearStart:(yearEnd-1)))
       recValues = readBin(binfile, double(), n = nbAqCells, size=8, endian = "little")
       nbAqCells = readBin(binfile, integer(), size=4, endian = "little")
       
-      # il reste a aller chercher la bonne valeurpour l'ensemble des piézos  ###################################
+      # il reste a aller chercher la bonne valeur pour l'ensemble des piezos  ###################################
       matData[totalDayCounter,3] <- recValues[1]                        
     }
   }
