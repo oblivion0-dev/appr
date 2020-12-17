@@ -1,6 +1,5 @@
-
-workingDirectory = "E:/Github/appr/"                # For Windows
-#workingDirectory = "home/pdell/github/appr/"       # For Linux
+workingDirectory  = 'E:/Github/appr/'                   # For Windows
+#workingDirectory = 'home/pdell/github/appr/'           # For Linux
 
 setwd(workingDirectory)
 
@@ -10,18 +9,27 @@ setwd(workingDirectory)
 library(Metrics)    # For RMSE
 library(hydroGOF)   # For KGE
 
-# Loading packages from "tidyverse" core
+# Loading packages from the 'tidyverse' core
 library(ggplot2) 
 library(scales)
+library(dplyr)
 
 # Loading entire homemade R library
-files <- list.files(paste(workingDirectory,"Lib/", sep = ""), pattern = "^.*[Rr]$", include.dirs = FALSE, full.names = TRUE)
+files <- list.files(paste(workingDirectory,'Lib/', sep = ''), pattern = '^.*[Rr]$', include.dirs = FALSE, full.names = TRUE)
 for (f in files) {
   source(f)
   print(paste('Loading',f))
 }
 
-# User inputs ----------------------------------------------------------------------------------
+# Constants definitions (HANDS OFF ! Unless you know what you're messing with.) ----------------------
+
+# Number of binary records in CaWaQS MB_AQ file
+nbRecAqMbFile <- 16  
+
+# Total number of criteria
+nbCrit <- 5 
+
+# USER INPUTS ----------------------------------------------------------------------------------
 
 # Starting year of simulation
 yearStart <- 2018
@@ -29,14 +37,16 @@ yearStart <- 2018
 # Ending year of simulation
 yearEnd <- 2020
 
-# Piezometer attributes textfile
-caracPiezo <- paste(workingDirectory,"Data/liste_piezos.txt", sep = "")
+# Piezometer attributes text file
+caracPiezo <- paste(workingDirectory,'Data/liste_piezos.txt', sep = '')
+
+f_FileInformation('piezo_info')
 
 # Pdf output filename
-outputPdfFile <- "output_piezo.pdf" 
+outputPdfFile <- 'output_piezo.pdf'
 
-# Simulation start date
-dateStart <- "2018-08-01" 
+# Simulation start date (in 'aaaa-mm-dd' format)
+dateStart <- '2018-08-01' 
 
 # Simulation length (in days)
 nbDays <- 731 
@@ -44,11 +54,8 @@ nbDays <- 731
 # Starting date for criteria calculation 
 statStart <- 1 
 
-# Ending date for criteria calculation (31/07/2020)
-statEnd <- nbDays 
-
-# Total number of criterias
-nbCrit <- 5 
+# Ending date for criteria calculation
+statEnd <- 731 
 
 # Starting date of graphs
 startGraph <- 1 
@@ -56,143 +63,153 @@ startGraph <- 1
 # Ending date of graphs
 endGraph <- startGraph + nbDays 
 
-# CaWaQS date offfset (correspond to the CaWaQS starting simulation date-1)
-dateCawOffset <- 61572   # 31/07/2018
+# CaWaQS date offfset (correspond to the CaWaQS starting simulation date - 1)
+dateCawOffset <- 61572    # 2018-07-31
 
-# Number of binary records in CaWaQS MB_AQ file
-nbRecAqMbFile <- 16   
-
-# Calculating statistic criteria (Yes = 1, No = 0)
-onOffCriteria <- 0
+# Calculating performance criteria (Yes = 1, No = 0)
+onOffCriteria <- 1
 
 # -----------------------------------------------------------------------------------------------
 
 # Loading piezometers properties
-properties <- read.table(caracPiezo, header = FALSE, na.strings = "NA")
-#nbPiezo <- length(properties[,1])  
-nbPiezo <- 3
+properties <- read.table(caracPiezo, header = FALSE, na.strings = 'NA')
+nbPiezo <- length(properties[,1])
 
 # Opening pdf output file
-pdf(outputPdfFile, height=7,width=10)
+pdf(outputPdfFile, height = 7, width = 10)
 
 # (Ox) dates management
-vecDate <- seq(as.Date(dateStart), as.Date(dateStart)+nbDays-1, by = "day")
-vecX <- seq(startGraph,startGraph+nbDays-1)
+vecDate <- seq(as.Date(dateStart), as.Date(dateStart)+nbDays-1, by = 'day')
+vecX <- seq(startGraph, startGraph + nbDays - 1)
 
-totalDayCounter <- 0
-
-# Matrix initializations
+# Various initializations
 matStat <- matrix(data = NA, nrow = nbPiezo, ncol = nbCrit)
 matData <- matrix(data = NA, nrow = nbDays, ncol = 2*nbPiezo+1)
+totalDayCounter <- 0
 
-# Loading date values in data matrix
+# Loading date values in main data matrix
 matData[,1] <- vecX
 
 # Observation data storage loop
-# for (i in (1:nbPiezo))
-# {
-#   fileObs <- paste(workingDirectory,"Data/H_SEINE/",properties[i,3],".dat",sep = "")
-#   
-#   f_isFileReachable(fileObs)
-#     
-#   fObs <- read.table(fileObs, h=FALSE)
-#   for (k in (1:length(fObs[,1]))) {
-#     if (fObs[k,4]-dateCawOffset >= 1 && fObs[k,4]-dateCawOffset <= nbDays){
-#       matData[fObs[k,4]-dateCawOffset,2*i] <- fObs[k,5]                      # Data storage in matrix over the simulation period only !
-#     }
-#   }
-#   print(paste('Observation data storage in progress for file : ',i,'/',nbPiezo,' : ',fileObs))
-# }  
+for (i in (1:nbPiezo))
+{
+  fileObs <- paste(workingDirectory,'Data/H_SEINE/',properties[i,3],'.dat',sep = '') # Needs to be set up accordingly
+  exist <- f_isFileReachable(fileObs, 0, 0)
+  
+  if (exist == 0)
+  {
+    print(paste('Observation data storage in progress for file :',i,'out of',nbPiezo,':',fileObs))
+    fObs <- read.table(fileObs, h = FALSE)
+    
+    for (k in (1:length(fObs[,1]))) 
+    {
+      if (fObs[k,4]-dateCawOffset >= 1 && fObs[k,4] - dateCawOffset <= nbDays)
+      {
+        matData[fObs[k,4] - dateCawOffset,2*i] <- fObs[k,5]  # Data storage in matrix over the simulation period only !
+      }
+    }
+  }
+}  
  
 # Simulated data storage loop
 for (y in (yearStart:(yearEnd-1)))
 {
-  fileSim <- paste(workingDirectory,'Data/AQ_MB.',y,y+1,'.bin',sep="")
-  f_isFileReachable(fileSim)
+  fileSim <- paste(workingDirectory,'Data/AQ_MB.',y,y+1,'.bin',sep='')
+  f_isFileReachable(fileSim, 0, 1)
  
   nbDays <- 365
-  if ((y+1)%%4 == 0){
-    nbDays <- 366
-  }
+  if ((y+1)%%4 == 0) nbDays <- 366
     
-  binfile = file(fileSim, "rb")
-  print(paste('Reading in progress for binary file : ',fileSim,'...'))
+  binfile = file(fileSim, 'rb')
+  print(paste('Reading for binary file :',fileSim,' in progress...'))
     
   for (d in (1:nbDays))
   {
-    #print(paste('Reading in progress for day : ',d,'out of',nbDays))
     totalDayCounter = totalDayCounter + 1
 
     for (r in (1:nbRecAqMbFile))
     {
-      nbAqCells = readBin(binfile, integer(), size=4, endian = "little")
-      recValues = readBin(binfile, double(), n = nbAqCells, size=8, endian = "little")
-      nbAqCells = readBin(binfile, integer(), size=4, endian = "little")
+      nbAqCells = readBin(binfile, integer(), size = 4, endian = 'little')
+      recValues = readBin(binfile, double(), n = nbAqCells, size = 8, endian = 'little')
+      nbAqCells = readBin(binfile, integer(), size = 4, endian = 'little')
       
-      if (r == 1) {
-        for (p in (1:nbPiezo)){
+      if (r == 1)
+      {
+        for (p in (1:nbPiezo))
+        {
           matData[totalDayCounter,2*p+1] <- recValues[properties[p,9]] 
         }        
       } 
-      
     }
   }
   close(binfile)
-  print(paste('Reading for binary file : ',fileSim,'done. File closed.'))
+  print(paste('Reading for binary file :',fileSim,'done. File closed.'))
 }
 
- # Plotting main loop 
+# Plotting main loop 
 for (i in (1:nbPiezo))
 {
-   
-#   if (onOffCriteria == 1) {
+  if (onOffCriteria == 1)
+  {
+    # Performance calculations
+    statAtt <- f_StatisticCriterias(matData[,2*i],matData[,2*i+1],'piezo',statStart,statEnd)
      
-     # Statistic criteria calculations
-     statAtt <- f_StatisticCriterias(matData[,2*i],matData[,2*i+1],'piezo',statStart,statEnd)
-     
-     # Graph criteria labeling
-     statLabel <-paste('n =',statAtt['n'],' - Mean obs. level = ',signif(statAtt['mobs'],3),'m - Mean sim. level = ',signif(statAtt['msim'],3),
-                       'm \n RMSE = ',signif(statAtt['rmse'],3),'m - KGE = ',signif(statAtt['kge'],3))
- #  }
-   
-    # Setting title
-    figTitle <- paste('Piezometer',properties[i,2],' : ',properties[i,4],' - Layer : ',properties[i,5])
- 
-    # Plotting
-    pl = ggplot(matData) +
-      geom_line(aes(x = results[,1], y = matData[,2*i+1], color = 'Simulated head'), size = 0.4, alpha = 0.8) +
-   #   geom_point(aes(x = results[,1], y = matData[,2*i], color = 'Measured head'), size = 0.6, alpha = 0.3) +
-      ggtitle(label = figTitle, subtitle = statLabel) +
-      labs(x = 'Time (years)', y = 'Hydraulic head (mNGF)', caption = '')  # if needed
- 
-    # Aesthetic settings
-    myGraphOptions <- theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5),
-                      plot.subtitle = element_text(hjust = 0.5),
-                      legend.title = element_text(colour = "black",  face = "bold.italic", family = "Helvetica"),
-                      legend.text = element_text(face = "italic", colour="black",family = "Helvetica"),
-                      legend.position="top", legend.direction="horizontal",
-                      axis.title = element_text(family = "Helvetica", size = (13), colour = "black"),
-                      axis.text.y = element_text(family = "Helvetica", colour = "black", size = (13)),
-                      axis.text.x = element_text(family = "Helvetica", colour = "black", angle = 45, hjust = 1, size = (11)),
-                      plot.margin = unit(c(1,1,1,1), "cm"))
- 
-    # Printing
-    print(pl + myGraphOptions +
-            scale_color_manual(values=c("red", "blue")) +
-            labs(color = "Color code : ") +
-            scale_x_continuous(limits=c(startGraph, endGraph))) #, breaks=c(45000,50000,55000), labels=c(vecDate[vecX[45000]], "five", "eight"))) <- a finir
- 
+    # Graph criteria labeling
+    statLabel <-paste('n =',statAtt['n'],' - Mean obs. level = ',signif(statAtt['mobs'],3),'m - Mean sim. level = ',signif(statAtt['msim'],3),
+                     'm \n RMSE = ',signif(statAtt['rmse'],3),'m - KGE = ',signif(statAtt['kge'],3))
+  
     # Criteria storage
     matStat[i,1] <- statAtt['n']
     matStat[i,2] <- statAtt['mobs']
     matStat[i,3] <- statAtt['msim']
     matStat[i,4] <- statAtt['rmse']
     matStat[i,5] <- statAtt['kge']
- 
-    print(paste("Plotting : ",i, " - Main statistics values : ",statLabel))
-  };
+  }
+    
+  # Setting title
+  figTitle <- paste('Piezometer',properties[i,2],' : ',properties[i,4],' - Layer : ',properties[i,5])
+     
+  # Plotting
+  dataFrame <- as.data.frame(matData)    
+     
+  pl =  ggplot(dataFrame) +
+        geom_line(aes(x = dataFrame[,1], y = dataFrame[,2*i+1], color = 'Simulated head'), size = 0.4, alpha = 0.8)  +
+        geom_point(aes(x = dataFrame[,1], y = dataFrame[,2*i], color = 'Measured head'), size = 0.6, alpha = 0.3) +
+        ggtitle(label = figTitle) +   # subtitle = statLabel
+        labs(x = 'Time (days)', y = 'Hydraulic head (mNGF)', caption = 'CaWaQS2.90 - Seine application')
+  
+  # Aesthetic settings
+  myGraphOptions <- theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5),
+                    plot.subtitle = element_text(hjust = 0.5),
+                    legend.title = element_text(colour = "black",  face = "bold.italic", family = "Helvetica"),
+                    legend.text = element_text(face = "italic", colour="black",family = "Helvetica"),
+                    legend.position="top", legend.direction="horizontal",
+                    axis.title = element_text(family = "Helvetica", size = (13), colour = "black"),
+                    axis.text.y = element_text(family = "Helvetica", colour = "black", size = (13)),
+                    axis.text.x = element_text(family = "Helvetica", colour = "black", angle = 45, hjust = 1, size = (11)),
+                    plot.margin = unit(c(1,1,1,1), "cm"))
+    
+  # Printing graphs out...
+  if (onOffCriteria == 1)
+  {
+    print(paste("Plotting : ",i,'out of',nbPiezo," - Main statistics values : ",statLabel))
+    
+    print(pl + myGraphOptions + scale_color_manual(values=c("red", "blue")) +
+          labs(color = "Color code : ") +
+          scale_x_continuous(limits=c(startGraph, endGraph)) + ggtitle(label = figTitle, subtitle = statLabel))
+  }
+  else 
+  {
+    print(paste("Plotting : ",i,'out of',nbPiezo))
+    
+    print(pl + myGraphOptions + scale_color_manual(values=c("red", "blue")) +
+          labs(color = "Color code : ") +
+          scale_x_continuous(limits=c(startGraph, endGraph)) + ggtitle(label = figTitle))                    
+  }
 
-# Closing output .pdf
+}
+
+# Signing off
 dev.off()
 
 print("Done.")

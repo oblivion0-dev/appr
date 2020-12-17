@@ -1,4 +1,4 @@
-# Function : Calculating all statistic criterias for piezometry and discharge datas
+# Function : Calculating statistic criterias for piezometry (and discharge data (coming soon))
 
 f_StatisticCriterias<-function(vecObs,vecSim,type,startTime,endTime){
   
