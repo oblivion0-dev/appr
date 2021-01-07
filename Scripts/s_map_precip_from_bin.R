@@ -16,8 +16,8 @@ library(tmap)
 library(tmaptools)
 library(leaflet)
 library(dplyr)
-#
-# # Loading entire homemade R library
+
+# Loading entire homemade R library
 files <- list.files(paste(workingDirectory,'Lib/', sep = ''), pattern = '^.*[Rr]$', include.dirs = FALSE, full.names = TRUE)
 for (f in files) {
   source(f)
@@ -109,7 +109,7 @@ for (s in 1:nbSim)
                           plot.margin = unit(c(1,1,1,1), "cm"))
   
   # Plotting
-  #print(paste('Rendering plot for :',names[s,1], sep=""))
+  print(paste('Rendering plot for :',names[s,1], sep=""))
   
   pngTitle = paste("PRCP_SC_",names[s,1],sep="")
   png(file = pngTitle, width = 1920, height = 1080, units = "px")
