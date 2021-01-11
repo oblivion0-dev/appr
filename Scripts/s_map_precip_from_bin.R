@@ -111,10 +111,10 @@ for (s in 1:nbSim)
   # Plotting
   print(paste('Rendering plot for :',names[s,1], sep=""))
   
-  pngTitle = paste("PRCP_SC_",names[s,1],sep="")
-  png(file = pngTitle, width = 1920, height = 1080, units = "px")
+  figTitle <- paste("PRCP_SC_",names[s,1],sep="")
   
-  figTitle <- pngTitle
+  pngTitle <- paste(figTitle,".png", sep="")
+  png(file = pngTitle, width = 1920, height = 1080, units = "px")
   
   pl <- ggplot(spatialJoin) +
     myGraphOptions +
