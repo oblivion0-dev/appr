@@ -21,4 +21,15 @@ f_FileInformation <- function(filetype)
    print(paste('Column 12 : -'))
 
   }
+  
+  if (filetype == 'station_info')
+  {
+    print(paste('Required information : gauging station main informations :'))
+    print(paste('Column 1 : Station ID'))
+    print(paste('Column 2 : Station name'))
+    print(paste('Column 3 : GIS-id river element'))
+    print(paste('Column 4 : Model river-AQ connexion status'))
+    print(paste('Column 5 : Observation data naturalization status'))
+    print(paste('Column 6 : Catchment size (in km2)'))
+  }
 }

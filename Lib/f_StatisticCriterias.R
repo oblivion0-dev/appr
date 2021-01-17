@@ -1,4 +1,4 @@
-# Function : Calculating statistic criterias for piezometry (and discharge data (coming soon))
+# Function : Calculating statistic criterias for piezometry and discharge data
 
 f_StatisticCriterias<-function(vecObs,vecSim,type,startTime,endTime){
   
@@ -6,12 +6,15 @@ f_StatisticCriterias<-function(vecObs,vecSim,type,startTime,endTime){
   serieObs <- vecObs[startTime:endTime]
   serieSim <- vecSim[startTime:endTime]
   
-  if (type=='piezo'){
-    stat_rmse<-rmse(serieObs, serieSim, na.rm = TRUE)
-    stat_kge<-KGE(serieObs, serieSim, na.rm = TRUE)
-    
-  } else if (type=='discharge'){
-    
+  if (type == 'piezo')
+  {
+    stat_rmse<-rmse(serieSim, serieObs, na.rm = TRUE)
+    stat_kge<-KGE(serieSim, serieObs, na.rm = TRUE)
+  } 
+  else if (type=='discharge')
+  {
+    stat_NSeff<-NSeff(serieSim, serieObs, na.rm = TRUE) #Nash Sutcliffe efficiency
+    stat_kge<-KGE(serieSim, serieObs, na.rm = TRUE)
   }
   else{
     printf('Unknown type argument in f_StatisticCriterias() !')
@@ -23,7 +26,17 @@ f_StatisticCriterias<-function(vecObs,vecSim,type,startTime,endTime){
   moy_sim <- mean(serieSim, na.rm = TRUE)
   
   # Creating function's return list
-  statAttributes <- c('n'=nobs,'mobs'=moy_obs,'msim'=moy_sim,'rmse'=stat_rmse,'kge'=stat_kge)
+  if (type=='piezo')
+  {
+    statAttributes <- c('n'=nobs,'mobs'=moy_obs,'msim'=moy_sim,'rmse'=stat_rmse,'kge'=stat_kge)
+  } else if (type=='discharge')
+  {
+    statAttributes <- c('n'=nobs,'mobs'=moy_obs,'msim'=moy_sim,'nash'=stat_NSeff,'kge'=stat_kge)
+  }
+  else{
+    printf('Unknown type argument in f_StatisticCriterias() !')
+    break
+  }
   
   return(statAttributes)
 }
