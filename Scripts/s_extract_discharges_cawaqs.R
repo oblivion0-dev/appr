@@ -207,7 +207,7 @@ for (i in (1:nbStations))
        
       # Graph criteria labeling
       statLabel <-paste('n =',statAtt['n'],' - Mean obs. Q = ',signif(statAtt['mobs'],1),'m3/s - Mean sim. Q = ',signif(statAtt['msim'],1),
-                       'm3/s \n Nash = ',signif(statAtt['nash'],3),' - KGE = ',signif(statAtt['kge'],3),'Cpearson = ',signif(statAtt['cpearson'],3))
+                       'm3/s \n Nash = ',signif(statAtt['nash'],3),' - KGE = ',signif(statAtt['kge'],3),' - Cpearson = ',signif(statAtt['cpearson'],3))
 
       # Criteria storage
       matStat[i,1] <- statAtt['n']
