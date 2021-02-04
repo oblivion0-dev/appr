@@ -19,7 +19,7 @@ f_StatisticCriterias<-function(vecObs,vecSim,type,startTime,endTime){
     stat_NSeff<-NSeff(serieSim, serieObs, na.rm = TRUE) #Nash Sutcliffe efficiency
     stat_kge<-KGE(serieSim, serieObs, na.rm = TRUE)
 	stat_ccorr_pearson<-cor(serieSim, serieObs, use="pairwise.complete", method = "pearson")
-	stat_logNSE<-NSE(serieSim, serieObs, na.rm = TRUE, FUN=log2, epsilon="Pushpalatha2012")  # Ln NSE 
+	stat_logNSE<- 0 #NSE(serieSim, serieObs, na.rm = TRUE, FUN=log2, epsilon="Pushpalatha2012")  # Ln NSE 
   }
   else{
     printf('Unknown type argument in f_StatisticCriterias() !')

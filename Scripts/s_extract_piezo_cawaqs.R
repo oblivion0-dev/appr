@@ -35,62 +35,55 @@ nbCrit <- 8
 
 # Type of CaWaQS-output file what are being read 
 outputType <- "AQ_H"
-
 # Starting year of simulation
 yearStart <- 1970
- 
 # Ending year of simulation
 yearEnd <- 2020
- 
 # Number of layers of the application
 nbLayers <- 8
-
 # Layers names (in order, from top to bottom)
-layerNames <- c("Alluvial deposits","Beauce limestones","Brie limestones / Fontainebleau sands", "Champigny limestones","Lutetian limestones","Thanetian limestones","Chalk aquifer")
-
+layerNames <- c("1-Alluvial deposits","2-Beauce limestones","3-Brie limestones / Fontainebleau sands", "4-Champigny limestones","5-Lutetian limestones","6-Thanetian limestones","7-Chalk aquifer")
 # Absolute path to the piezometer attributes text file
-caracPiezo <- '/home/ngallois/Programmes/appr/Data/liste_piezo_export.txt'
-f_FileInformation('piezo_info') # To remind the user the expected structur of the 'caracPiezo' file
-  
+#caracPiezo <- '/home/ngallois/Programmes/appr/Data/liste_piezo_export.txt'
+#caracPiezo <- '/home/ngallois/Programmes/appr/Data/liste_piezo_test.txt'
+caracPiezo <- '/home/ngallois/Programmes/appr/Data/liste_piezo_filtre_rapport.txt'
+
+f_FileInformation('piezo_info') # To remind the user the expected structur of the 'caracPiezo' file 
 # Absolute path to the folder containing observation files
 obsFolder <- '/home/ngallois/Programmes/appr/Data/H_donnees_shr_2020'
-
 # Absolute path to the folder containing the output binary files
 simFolder <- '/home/ngallois/Programmes/appr/Data/OUTPUTS_JURASSIQUE_2021_COUPLED_CALIBSOUT_44_1970-2020_CAWAQS_292/RUN_CAL_1/Output_AQ'
-
 # CaWaQS version
 versionID <- 2.92
-
 # Model name
 modelName <- 'App-Seine'
-
 # Simulation name
 simname <- 'SAFRAN-1970-2020'
-
 # Simulation start date (in 'aaaa-mm-dd' format)
 dateStart <- '1970-08-01' 
- 
 # Simulation duration (in days)
 nbDays <- 18263 
- 
 # Starting date for criteria calculations
 statStart <- 5845 # 01/08/1986  # (1 = starting day of simulation)
- 
 # Ending date for criteria calculation (by default, simulation ending date)
 statEnd <- nbDays 
- 
 # Starting date of graphs (1 = first day of simulation)
 startGraph <- 3654   # 01/08/1980
- 
 # Ending date of graphs (by default, until the last day of simulation)
 endGraph <- nbDays 
- 
 # CaWaQS date offfset (correspond to the CaWaQS starting simulation date - 1) (Reference day 0 = 01/01/1850)
 dateCawOffset <- 44040    # 1970-07-31
-
-# Calculating performance criteria (Yes = 1, No = 0)
+# Calculating performance criteria (Yes = 1, No = Anything else)
 onOffCriteria <- 1
- 
+# Plotting mean simulated levels vs. observed level (Yes = 1, No = Anything else)
+plotMeanLevels <- 1
+# Name of the plot
+plotMeanLevelsName <- 'CompMeanLevels.pdf'
+# Minimun mean value of the hydraulic head over the domain (in mNGF)
+piezoMin <- 0
+# maximum mean value of the hydraulic head over the domain (in mNGF)
+piezoMax <- 250
+
 # END OF USER CORNER --------------------------------------------------------------------------------------
  
 # Pdf output filename
@@ -179,7 +172,7 @@ for (y in (yearStart:(yearEnd-1)))
        
      if (r == 1) # 1 = Hydraulic Head
      {
-       for (p in (1:nbPiezo))
+       for (p in (1:nbPiezo)) 
        {
          matData[totalDayCounter,2*p+1] <- recValues[properties[p,9]]  # Searching the absolute ID position in the binary record
          }        
@@ -199,7 +192,7 @@ for (i in (1:nbPiezo))
      statAtt <- f_StatisticCriterias(matData[,2*i],matData[,2*i+1],'piezo',statStart,statEnd)  # Still need to set a minimal threshold on number of observation values
       
      # Graph criteria labeling
-     statLabel <-paste('n =',statAtt['n'],' - Mean obs. level = ',signif(statAtt['mobs'],2),'m - Mean sim. level = ',signif(statAtt['msim'],2),' - Mean error = ',signif(statAtt['me'],2),'m \n RMSE = ',signif(statAtt['rmse'],2),'m - KGE = ',signif(statAtt['kge'],2),' - Cpearson = ',signif(statAtt['cpearson'],2),'m - Rstd = ',signif(statAtt['rsd'],2))
+     statLabel <-paste('n =',statAtt['n'],' - Mean obs. level = ',signif(statAtt['mobs'],2),'m - Mean sim. level = ',signif(statAtt['msim'],2),'m - Mean error = ',signif(statAtt['me'],2),'m \n RMSE = ',signif(statAtt['rmse'],2),'m - KGE = ',signif(statAtt['kge'],2),' - Cpearson = ',signif(statAtt['cpearson'],2),'m - Rstd = ',signif(statAtt['rsd'],2))
    
      # Criteria storage
      matStat[i,1] <- statAtt['n']
@@ -263,9 +256,14 @@ for (i in (1:nbPiezo))
 # Closing pdf
 dev.off()
 
-# Creating unique data frame to write
-df <- data.frame(properties[,2],properties[,3],matStat)
-colnames(df)<- c("BSS_FULL","BSS_FIC","n","mobs","msim","rmse","kge","ccorr","me","rstd")
+# Creating the output data frame to write
+df <- data.frame(properties,matStat)
+colnames(df)<- c("ID","BSS_FULL","BSS_FIC","City","LayerName","LithoName","ID_INT","ID_LAY","ID_ABS","SoilType",
+                 "Ymin","Ymax","n","mobs","msim","rmse","kge","ccorr","me","rstd")
+
+if (plotMeanLevels == 1) f_PlotMeanSimObsLevels(df,plotMeanLevelsName,piezoMin,piezoMax,layerNames)
+
 write.table(df, file = "statistics_piezos.txt")
+
 
 print(paste("Done. Output pdf file located in", workingDirectory,sep=''))
