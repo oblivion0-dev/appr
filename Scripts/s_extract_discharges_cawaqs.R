@@ -1,10 +1,9 @@
-# Last revision : 17-01-2020 : 15:18:13
+# Last revision : jeu. 04 févr. 2021 13:34:30 CET  
 
-# To do :
-# - Needs to write the txt file of statistic criterias 
-# - Rework the date management on the Ox axis
-# - Add more criterias (Rstd, Ccorr, Mean bias)
-# - Criteria calculations NEEDS TO BE VERIFIED !
+# To do (minor things) :
+# - Improve f_CustomXticsDatePlot function customization() so we can set an fixed interval or 
+#   set the starting day   
+
 
 workingDirectory = '/home/ngallois/Programmes/appr/' 
 setwd(workingDirectory)
@@ -19,6 +18,7 @@ library(hydroGOF)   # For KGE, NSE
 library(ggplot2) 
 library(scales)
 library(dplyr)
+library(stringr)
 
 # Loading entire homemade R library
 files <- list.files(paste(workingDirectory,'Lib', sep = ''), pattern = '^.*[Rr]$', include.dirs = FALSE, full.names = TRUE)
@@ -30,7 +30,7 @@ for (f in files) {
 # Constants definitions (HANDS OFF ! Unless you know what you're messing with.) ----------------------
  
 # Total number of statistical criterias
-nbCrit <- 5 
+nbCrit <- 7 
 
 # Maximum value of GIS id river element
 maxGISeleID <- 30000
@@ -54,19 +54,19 @@ f_FileInformation('station_info') # To remind the user the expected structur of 
 obsFolder <- '/home/ngallois/Programmes/appr/Data/DEBITS_DATA_2020_NAT'
  
 # Absolute path to the folder containing the output binary files
-simFolder <- '/home/ngallois/Programmes/appr/Data'
+simFolder <- '/home/ngallois/Programmes/appr/Data/OUTPUTS_JURASSIQUE_2021_COUPLED_CALIBSOUT_44_1970-2020_CAWAQS_292/RUN_CAL_1/Output_HYD'
  
 # Absolute path to the HYD CaWaQS correspondance file
 correspFile <- '/home/ngallois/Programmes/appr/Data/HYD_corresp_file.txt'
 
 # CaWaQS version
-versionID <- 2.91
+versionID <- 2.92
  
 # Model name
 modelName <- 'Seine-8C'
  
 # Simulation name
-simname <- 'SAFRAN_1970-2020'
+simname <- 'SAFRAN-1970-2020'
  
 # Simulation start date (in 'aaaa-mm-dd' format)
 dateStart <- '1970-08-01' 
@@ -75,7 +75,7 @@ dateStart <- '1970-08-01'
 nbDays <- 18263 
   
 # Starting date for criteria calculations
-statStart <- 10746 # 01/01/2000  # (1 = starting day of simulation)
+statStart <- 5845 # 01/08/1986  # (1 = starting day of simulation)
   
 # Ending date for criteria calculation (by default, simulation ending date)
 statEnd <- nbDays 
@@ -131,6 +131,20 @@ totalDayCounter <- 0
 # Loading date values in main data matrix
 matData[,1] <- vecX
   
+# Custom label management of OX axis (xtics is a list of 2 vectors : breakpoints and associated labels)
+xtics <- f_CustomXticsDatePlot(vecX,vecDate,yearStart) # return breakpoints and labels every august 1st for now
+breakpoints <- as.vector(unlist(xtics['breaks']))
+xticsLabels <- as.Date(unlist(xtics['labels']))
+
+# So we can only print out years as xtics...
+shortLabels <- c()
+for (i in (1:length(xticsLabels)))
+{
+ shortLabels[i] <- str_sub(xticsLabels[i], 1, 4)
+}
+
+# ----------------------------------------------------
+
 # Observation data storage loop
 for (i in (1:nbStations))
 {
@@ -192,19 +206,22 @@ for (i in (1:nbStations))
       statAtt <- f_StatisticCriterias(matData[,2*i],matData[,2*i+1],'discharge',statStart,statEnd)  # Still need to set a minimal threshold on number of observation values
        
       # Graph criteria labeling
-      statLabel <-paste('n =',statAtt['n'],' - Mean obs. Q = ',signif(statAtt['mobs'],3),'m3/s - Mean sim. Q = ',signif(statAtt['msim'],3),
-                       'm3/s \n Nash = ',signif(statAtt['nash'],3),' - KGE = ',signif(statAtt['kge'],3))
-    
+      statLabel <-paste('n =',statAtt['n'],' - Mean obs. Q = ',signif(statAtt['mobs'],1),'m3/s - Mean sim. Q = ',signif(statAtt['msim'],1),
+                       'm3/s \n Nash = ',signif(statAtt['nash'],3),' - KGE = ',signif(statAtt['kge'],3),'Cpearson = ',signif(statAtt['cpearson'],3))
+
       # Criteria storage
       matStat[i,1] <- statAtt['n']
       matStat[i,2] <- statAtt['mobs']
       matStat[i,3] <- statAtt['msim']
       matStat[i,4] <- statAtt['nash']
-      matStat[i,5] <- statAtt['kge']
+      matStat[i,5] <- statAtt['lnNash']
+      matStat[i,6] <- statAtt['kge']
+      matStat[i,7] <- statAtt['cpearson']
+
     }
       
    # Setting title
-   figTitle <- paste('Station ',properties[i,1],' : ',properties[i,2],' \nObs status : ',properties[i,5],' - Catchment area (km2) : ',properties[i,6])
+   figTitle <- paste(properties[i,1],' : ',properties[i,2],' \nObs status : ',properties[i,5],' - Catchment area (km2) : ',properties[i,6])
        
    # Plotting
    dataFrame <- as.data.frame(matData)    
@@ -213,7 +230,7 @@ for (i in (1:nbStations))
           geom_line(aes(x = dataFrame[,1], y = dataFrame[,2*i+1], color = 'Simulated discharge'), size = 0.4, alpha = 0.8)  +
           geom_point(aes(x = dataFrame[,1], y = dataFrame[,2*i], color = 'Measured discharge'), size = 0.6, alpha = 0.3) +
           ggtitle(label = figTitle) +   # subtitle = statLabel
-          labs(x = 'Time (days)', y = 'Discharge (m3/s)', 
+          labs(x = 'Time (markers at August, 1st)', y = 'Discharge (m3/s)', 
           caption = paste('CaWaQS',versionID,' - ',modelName,' application - Simulation : ',simname,sep=''))
     
     # Aesthetic settings
@@ -233,20 +250,29 @@ for (i in (1:nbStations))
       print(paste("Plotting : ",i,'out of',nbStations," - Main statistics values : ",statLabel))
       
       print(pl + myGraphOptions + scale_color_manual(values=c("red", "blue")) +
-            labs(color = "Color code : ") +
-            scale_x_continuous(limits=c(startGraph, endGraph)) + ggtitle(label = figTitle, subtitle = statLabel))
+            labs(color = "Color code : ") + scale_x_continuous(limits=c(startGraph, endGraph), 
+							  breaks=breakpoints,
+                              labels=shortLabels) + 
+           					  ggtitle(label = figTitle, subtitle = statLabel))
     }
     else 
     {
       print(paste("Plotting : ",i,'out of',nbStations))
       
       print(pl + myGraphOptions + scale_color_manual(values=c("red", "blue")) +
-            labs(color = "Color code : ") +
-            scale_x_continuous(limits=c(startGraph, endGraph)) + ggtitle(label = figTitle))                    
+            labs(color = "Color code : ") + scale_x_continuous(limits=c(startGraph, endGraph), 
+							  breaks=breakpoints,
+                              labels=shortLabels) + 
+           					  ggtitle(label = figTitle))
     }
  }
-  
-# Signing off
+
+# Closing pdf
 dev.off()
-  
+
+# Creating unique data frame to write
+df <- data.frame(properties[,1],matStat)
+colnames(df)<- c("STAT","n","mobs","msim","nash","lnNash","kge","ccorr")
+write.table(df, file = "statistics_stations.txt")
+
 print(paste("Done. Output pdf file located in", workingDirectory,sep=''))
