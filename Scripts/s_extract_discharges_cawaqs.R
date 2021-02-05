@@ -31,7 +31,6 @@ for (f in files) {
  
 # Total number of statistical criterias
 nbCrit <- 7 
-
 # Maximum value of GIS id river element
 maxGISeleID <- 30000
 
@@ -39,59 +38,50 @@ maxGISeleID <- 30000
  
 # Type of CaWaQS-output file what are being read 
 outputType <- "HYD_Q"
- 
 # Starting year of simulation
 yearStart <- 1970
-  
 # Ending year of simulation
 yearEnd <- 2020
-  
 # Absolute path to the gauging stations attributes text file
 caracStations <- '/home/ngallois/Programmes/appr/Data/liste_stations.txt'
-f_FileInformation('station_info') # To remind the user the expected structur of the 'caracStations' file
-   
+f_FileInformation('station_info') # To remind the user the expected structur of the 'caracStations' file 
 # Absolute path to the folder containing observation files
 obsFolder <- '/home/ngallois/Programmes/appr/Data/DEBITS_DATA_2020_NAT'
- 
 # Absolute path to the folder containing the output binary files
 simFolder <- '/home/ngallois/Programmes/appr/Data/OUTPUTS_JURASSIQUE_2021_COUPLED_CALIBSOUT_44_1970-2020_CAWAQS_292/RUN_CAL_1/Output_HYD'
- 
 # Absolute path to the HYD CaWaQS correspondance file
 correspFile <- '/home/ngallois/Programmes/appr/Data/HYD_corresp_file.txt'
-
 # CaWaQS version
 versionID <- 2.92
- 
 # Model name
 modelName <- 'Seine-8C'
- 
 # Simulation name
 simname <- 'SAFRAN-1970-2020'
- 
 # Simulation start date (in 'aaaa-mm-dd' format)
 dateStart <- '1970-08-01' 
-  
 # Simulation duration (in days)
 nbDays <- 18263 
-  
 # Starting date for criteria calculations
 statStart <- 5845 # 01/08/1986  # (1 = starting day of simulation)
-  
 # Ending date for criteria calculation (by default, simulation ending date)
 statEnd <- nbDays 
-  
 # Starting date of graphs (1 = first day of simulation)
 startGraph <- 13150  # 01/08/2006
-  
 # Ending date of graphs (by default, until the last day of simulation)
-endGraph <- nbDays 
-  
+endGraph <- nbDays  
 # CaWaQS date offfset (correspond to the CaWaQS starting simulation date - 1) (Reference day 0 = 01/01/1850)
 dateCawOffset <- 44040    # 1970-07-31
- 
 # Calculating performance criteria (Yes = 1, No = 0)
-onOffCriteria <- 1
-  
+onOffCriteria <- 1 
+# Plotting mean simulated vs. mean observed discharges (Yes = 1, No = Anything else)
+plotMeanDischarges <- 1
+# Name of the plot
+plotMeanDischargeName <- 'CompMeanDischarge.pdf'
+# Minimun mean value of the discharge (in m3/s)
+DiscMin <- 0.01
+# Maximum mean value of the discharge (in m3/s)
+DiscMax <- 1000
+
 # END OF USER CORNER --------------------------------------------------------------------------------------
   
 # Pdf output filename
@@ -273,6 +263,9 @@ dev.off()
 # Creating unique data frame to write
 df <- data.frame(properties[,1],matStat)
 colnames(df)<- c("STAT","n","mobs","msim","nash","lnNash","kge","ccorr")
+
+if (plotMeanDischarges == 1) f_PlotMeanSimObsDischarges(df,plotMeanDischargeName,DiscMin,DiscMax)
+
 write.table(df, file = "statistics_stations.txt")
 
 print(paste("Done. Output pdf file located in", workingDirectory,sep=''))

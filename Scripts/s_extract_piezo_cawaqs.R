@@ -18,6 +18,7 @@ library(ggplot2)
 library(scales)
 library(dplyr)
 library(stringr)
+library(gridExtra)
 
 # Loading entire homemade R library
 files <- list.files(paste(workingDirectory,'Lib', sep = ''), pattern = '^.*[Rr]$', include.dirs = FALSE, full.names = TRUE)
@@ -47,7 +48,6 @@ layerNames <- c("1-Alluvial deposits","2-Beauce limestones","3-Brie limestones /
 #caracPiezo <- '/home/ngallois/Programmes/appr/Data/liste_piezo_export.txt'
 #caracPiezo <- '/home/ngallois/Programmes/appr/Data/liste_piezo_test.txt'
 caracPiezo <- '/home/ngallois/Programmes/appr/Data/liste_piezo_filtre_rapport.txt'
-
 f_FileInformation('piezo_info') # To remind the user the expected structur of the 'caracPiezo' file 
 # Absolute path to the folder containing observation files
 obsFolder <- '/home/ngallois/Programmes/appr/Data/H_donnees_shr_2020'
@@ -186,13 +186,14 @@ for (y in (yearStart:(yearEnd-1)))
 # Plotting loop 
 for (i in (1:nbPiezo))
 {
+
   if (onOffCriteria == 1)
   {
      # Performance calculations
      statAtt <- f_StatisticCriterias(matData[,2*i],matData[,2*i+1],'piezo',statStart,statEnd)  # Still need to set a minimal threshold on number of observation values
       
      # Graph criteria labeling
-     statLabel <-paste('n =',statAtt['n'],' - Mean obs. level = ',signif(statAtt['mobs'],2),'m - Mean sim. level = ',signif(statAtt['msim'],2),'m - Mean error = ',signif(statAtt['me'],2),'m \n RMSE = ',signif(statAtt['rmse'],2),'m - KGE = ',signif(statAtt['kge'],2),' - Cpearson = ',signif(statAtt['cpearson'],2),'m - Rstd = ',signif(statAtt['rsd'],2))
+     statLabel <-paste('n =',statAtt['n'],' - Mean obs. level = ',signif(statAtt['mobs'],2),'m - Mean sim. level = ',signif(statAtt['msim'],2),'m - Mean error = ',signif(statAtt['me'],2),'m \n RMSE = ',signif(statAtt['rmse'],2),'m - KGE = ',signif(statAtt['kge'],2),' - Cpearson = ',signif(statAtt['cpearson'],2),' - Rstd = ',signif(statAtt['rsd'],2))
    
      # Criteria storage
      matStat[i,1] <- statAtt['n']
@@ -234,7 +235,6 @@ for (i in (1:nbPiezo))
    if (onOffCriteria == 1)
    {
      print(paste("Plotting : ",i,'out of',nbPiezo," - Main statistics values : ",statLabel))
-     
      print(pl + myGraphOptions + scale_color_manual(values=c("red", "blue")) +
            labs(color = "Color code : ") +
            scale_x_continuous(limits=c(startGraph, endGraph), 
@@ -251,8 +251,8 @@ for (i in (1:nbPiezo))
 							  breaks=breakpoints,
                               labels=shortLabels) + ggtitle(label = figTitle))
    }
-}
 
+}
 # Closing pdf
 dev.off()
 
@@ -264,6 +264,5 @@ colnames(df)<- c("ID","BSS_FULL","BSS_FIC","City","LayerName","LithoName","ID_IN
 if (plotMeanLevels == 1) f_PlotMeanSimObsLevels(df,plotMeanLevelsName,piezoMin,piezoMax,layerNames)
 
 write.table(df, file = "statistics_piezos.txt")
-
 
 print(paste("Done. Output pdf file located in", workingDirectory,sep=''))

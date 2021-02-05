@@ -6,7 +6,7 @@ f_PlotMeanSimObsLevels<-function(df, plotName, piezMin, piezMax, layerNames){
 	# Opening pdf output file
 	pdf(plotName, height = 7, width = 10)
 
-	figTitle <- "Mean observed levels vs. mean simulated levels (1970-2020)"
+	figTitle <- "Mean observed vs. mean simulated levels (1970-2020)"
 
 	# First bissector line
     bissecXY <- seq(piezMin, piezMax)
