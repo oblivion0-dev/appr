@@ -3,11 +3,14 @@
 # Scripts mapping annual cumulative values (in mm) of a given WATBAL output term
 # and also the inter-annual values over the entire simulation period
 
+# Program deals with the two possible spatial scales (either 'ele_bu' or 'cprod')
+
 # -------------------------------------------------------------------------------------------
 
 # Setting working directory
 workingDirectory  = 'E:/Github/appr/'                     # For Windows
 #workingDirectory = '/home/nicolas/GitHub/appr/'           # For Linux
+
 setwd(workingDirectory)
 
 # -------------------------------------------------------------------------------------------
@@ -38,11 +41,8 @@ yearStart <- 1970
 # Ending year of forcing files set
 yearEnd <- 1975
 
-# Path of the text file storing the surface (in m2) of surface element
-#SurfFile <- './Data/Elebu_surfaces.txt'
-
 # Number of WATBAL surface elements
-nbSurfaceCells <- 10829
+nbSurfaceCells <- 7411
 
 # Generic output variable name which is plotter
 varName <- "Infiltration"
@@ -56,6 +56,9 @@ idRecValue <- 4
 # Calculation time-step duration in seconds
 tsDuration <- 86400.
 
+# Path of the CaWaQS watbal 'corresp' file
+correspWatbal <- "./Data/WATBAL_corresp_file.txt"
+
 # -----------------------------------------------------------------------------------------------
 
 nbYears <- yearEnd-yearStart+1
@@ -64,13 +67,19 @@ nbRec <- f_setNbRecOutputs(outputType)
 print(paste("Number of expected time-step records for the",outputType,"output files :",nbRec,sep= " "))
 
 # Loading the surface grid's shapefile
-SurfShp <- st_read("./Data/GRID_SURF/ELE_BU.shp", stringsAsFactors = FALSE)
+SurfShp <- st_read("./Data/GRID_SURF/CPROD.shp", stringsAsFactors = FALSE)
 
-areas <- as.vector(st_area(SurfShp))
+# Storing the attribute table
+attTable <- data.frame(SurfShp)
 
-# Storage of the grid cells surface, in order to turn m3/s outputs in mm/day
-#f_isFileReachable(SurfFile, 0, 1)
-#SurfTable <- read.table(SurfFile, header = TRUE, na.strings = 'NA')
+# Storing the 'corresp' file
+dfCorresp <- read.table(correspWatbal, header = TRUE, na.strings = 'NA')
+colnames(dfCorresp)<- c("ID_INTERN","ID_ABS","ID_Surf")
+
+
+dataShp <- merge(attTable,dfCorresp,by="ID_Surf") 
+
+
 
 # Outputs reading loop for all yearly files
 
@@ -80,7 +89,7 @@ vecMean <- rep(0,nbSurfaceCells)
 for (y in (yearStart:(yearEnd-1)))
 {
   # Opening yearly binary file
-  outputBinFile <- paste('C:/Users/Nicolas/ownCloud/Output_WATBAL_ELEBU/WATBAL_MB.',y,y+1,'.bin',sep="")
+  outputBinFile <- paste('C:/Users/Nicolas/ownCloud/Output_WATBAL_CPROD/WATBAL_MB.',y,y+1,'.bin',sep="")
      
   # Existence test, stops the program if unreachable
   f_isFileReachable(outputBinFile, 0, 1) 

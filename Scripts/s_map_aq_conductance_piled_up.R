@@ -71,7 +71,7 @@ for (i in (1:nbLayers))
   
   val <- f_InternToAbsIdAquifer(cellsPerLayer, i)
   f_isFileReachable(paramFiles[i], 0, 1)
-  pFile <- fread(paramFiles[i], header = FALSE, na.strings = 'NA')
+  pFile <- read.table(paramFiles[i], header = FALSE, na.strings = 'NA')
   pFile[,1] <- seq(val[1],val[2])
   pFile[,2] <- pFile[,2]*areas
 
