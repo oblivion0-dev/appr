@@ -1,6 +1,7 @@
-workingDirectory  = 'E:/Github/appr/'                   # For Windows
-#workingDirectory = 'home/pdell/github/appr/'           # For Linux
+# Clearing everything...
+rm(list = ls())
 
+workingDirectory  = 'E:/Github/appr/'                   # For Windows
 setwd(workingDirectory)
 
 # -------------------------------------------------------------------------------------------
@@ -25,15 +26,13 @@ for (f in files) {
   print(paste('Loading',f))
 }
 
-# Constants definitions (HANDS OFF ! Unless you know what you're messing with.) ----------------
-
-# Number of binary records in CaWaQS MB_AQ file
-nbRecAqMbFile <- 1  
-
-# Total number of criteria
-nbCrit <- 5 
-
 # USER INPUTS ----------------------------------------------------------------------------------
+
+# Simulation Name
+simName <- "SC_1910_R100_POMP"
+
+# CaWaQS output file type
+typeFile <- "AQ_H"
 
 # Starting year of simulation
 yearStart <- 1909
@@ -41,18 +40,11 @@ yearStart <- 1909
 # Ending year of simulation
 yearEnd <- 1910
 
-# Piezometer attributes text file
-#caracPiezo <- paste(workingDirectory,'Data/liste_piezos.txt', sep = '')
-#f_FileInformation('piezo_info')
-
 # Simulation start date (in 'aaaa-mm-dd' format)
 dateStart <- '1909-08-01' 
 
 # Simulation length (in days)
-nbDays <- 365 
-
-# CaWaQS date offfset (correspond to the CaWaQS starting simulation date - 1)
-#dateCawOffset <- 61572    # 2018-07-31
+nbDays <- 365
 
 # Vector of cell number per layer
 cellsPerLayer <- c(16465,6192)
@@ -60,41 +52,36 @@ cellsPerLayer <- c(16465,6192)
 # Layer ID (starts at 1)
 layerID <- 1 # Couche PPC
 
+# Absolute starting day to print map (1 = First day of the [01/08/yearStart:31/07/yearEnd] period)
 absStartDay <- 154 
-absEndDay <- 243
+
+# Absolute ending day to print map
+absEndDay <- 210
 
 # -----------------------------------------------------------------------------------------------
 
-# Loading piezometers properties
-#properties <- read.table(caracPiezo, header = FALSE, na.strings = 'NA')
-#nbPiezo <- length(properties[,1])
+nbRecAqMbFile <- f_setNbRecOutputs(typeFile) 
+print(paste("Number of daily binary records set to",nbRecAqMbFile,sep=" "))
 
 # (Ox) dates management
 vecDate <- seq(as.Date(dateStart), as.Date(dateStart)+nbDays-1, by = 'day')
 vecX <- seq(1, nbDays)
- print(vecDate)
-# Initializations
-#matData <- matrix(data = NA, nrow = nbDays, ncol = 2*nbPiezo+1)
-totalDayCounter <- 0
 
-# Loading date values in main data matrix
-#matData[,1] <- vecX
+# Initializations
+totalDayCounter <- 0
 
 # Computing absolute staring and ending layer cells
 AbsIDs <- f_InternToAbsIdAquifer(cellsPerLayer,layerID)
 
 # Loading the layer grid's shapefile
 myShapefile <- st_read("./Data/GRID_PPC/maillage_PPC.shp", stringsAsFactors = FALSE)
-# str(myMap)
-
 
 print(paste('Extraction for layer',layerID,' Number of cells :',cellsPerLayer[layerID],'Abs start point :',AbsIDs[1],'Abs end point :',AbsIDs[2]))
-
 
 # Simulated data storage loop
 for (y in (yearStart:(yearEnd-1)))
 {
-  fileSim <- paste(workingDirectory,'Data/OUTPUT_SC_1910_R100_POMP/AQ_H.',y,y+1,'.bin',sep='')
+  fileSim <- paste(workingDirectory,'Data/',simName,'/',typeFile,'.',y,y+1,'.bin',sep='')
   f_isFileReachable(fileSim, 0, 1)
   
   nbDays <- 365
@@ -123,6 +110,13 @@ for (y in (yearStart:(yearEnd-1)))
           df <- data.frame(seq(AbsIDs[1], AbsIDs[2]),recValues[AbsIDs[1]:AbsIDs[2]]) 
           colnames(df)<- c("id_ABS","Charge")
            
+          # if (totalDayCounter == 184)
+          # {
+          #   write.table(df, file = "piezo.txt")
+          # }
+          
+          
+          
           # Joining
           spatialJoin <- inner_join(df,myShapefile, by = "id_ABS")
           
@@ -143,19 +137,36 @@ for (y in (yearStart:(yearEnd-1)))
           pngTitle = paste("Piezo_jour_",totalDayCounter,".png",sep="")
           png(file = pngTitle, width = 1920, height = 1080, units = "px")
           
-          figTitle <- paste('Hauteur piézométrique - Jour : ',vecDate[totalDayCounter])
-          
+          figTitle <- paste(simName,'- H - Jour : ',vecDate[totalDayCounter])
           
           pl <-   ggplot(spatialJoin) + myGraphOptions + ggtitle(label = figTitle) +
             geom_sf(data = spatialJoin, aes(fill=Charge, geometry = geometry), color=NA) + 
-            #scale_color_gradient2(midpoint=mid,  low="blue", mid="white",
-            #                      high="red",space = "Lab")
-            scale_color_gradientn(colours = rainbow(5))
-         #   scale_fill_viridis_c(option="magma",space = "Lab",na.value = "transparent",guide = "colourbar",
-        #    aesthetics = "fill", limits=c(0,40), direction=1) +
-        #    theme(legend.key.size = unit(10, 'cm')) + theme(legend.key.height= unit(4, 'cm')) + theme(legend.key.width= unit(2, 'cm')) + 
-        #    theme(legend.title = element_text(size=25)) +   theme(legend.text = element_text(size=35))
-        #  + labs(fill = "Dose (mg)")
+            
+            scale_fill_gradientn(colours=c("#ebf5fb","#d6eaf8","#aed6f1","#85c1e9","#5dade2","#3498db","#3498db","#2e86c1","#1f618d","#1b4f72"),
+           #   low = "white",
+           #   high = "blue",
+              space = "Lab",
+              na.value = "transparent",
+              guide = "colourbar",
+              aesthetics = "fill",limits=c(22,40), breaks=c(22,24,26,28,30,32,34,36,38,40)
+           
+           
+           
+            
+           
+           
+            ) +
+           # scale_fill_gradient2(low="white"
+            #                      high="blue",space = "Lab")
+         #   scale_fill_viridis_c(option = "viridis", limits = c(2, 15),direction = -1) +
+         #      scale_fill_viridis_c(option="magma",space = "Lab",na.value = "transparent",guide = "colourbar",
+        #    aesthetics = "fill", limits=c(20,40), direction=1) +
+          theme(legend.key.size = unit(10, 'cm')) + 
+            theme(legend.key.height= unit(6.5, 'cm')) + 
+            theme(legend.key.width= unit(2, 'cm')) + 
+            theme(legend.title = element_text(size=25)) +
+            theme(legend.text = element_text(size=35)) + 
+            labs(fill = "diff 2sc (m)")
           
           print(pl)
           

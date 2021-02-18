@@ -19,7 +19,6 @@ f_CustomXticsDatePlot<-function(vecX,vecDate,startYear){
     xLabels <- append(xLabels,vecDate[pos])
     startYear <- startYear + 1
   }
-
   returnList <- list("breaks" = breakpoints[1:length(breakpoints)-1], "labels" = xLabels[1:length(xLabels)-1])
 
   return(returnList)

@@ -28,9 +28,10 @@ for (f in files) {
 
 # USER INPUTS ----------------------------------------------------------------------------------
 
-# Simulation name
-simName <- "SC_1910_R115_NONE"
-  
+# Simulation names
+simNameOne <- "SC_1910_R100_STOP"
+simNameTwo <- "SC_1910_R100_POMP"
+
 # CaWaQS output file type
 typeFile <- "AQ_H"
 
@@ -39,9 +40,6 @@ yearStart <- 1909
 
 # Ending year of simulation
 yearEnd <- 1910
-
-# Path of the MNT file
-FileMNT <- paste(workingDirectory,'Data/COTE_MNT.txt', sep = '')
 
 # Simulation start date (in 'aaaa-mm-dd' format)
 dateStart <- '1909-08-01' 
@@ -56,18 +54,16 @@ cellsPerLayer <- c(16465,6192)
 layerID <- 1 # Couche PPC
 
 # Absolute starting day to print map (1 = First day of the [01/08/yearStart:31/07/yearEnd] period)
-absStartDay <- 154 
+#absStartDay <- 154 
+absStartDay <- 180 
 
 # Absolute ending day to print map
-absEndDay <- 243
+absEndDay <- 215
 
 # -----------------------------------------------------------------------------------------------
 
 nbRecAqMbFile <- f_setNbRecOutputs(typeFile) 
 print(paste("Number of daily binary records set to",nbRecAqMbFile,sep=" "))
-
-# Loading piezometers properties
-coteMNT <- read.table(FileMNT, header = TRUE, na.strings = 'NA')
 
 # (Ox) dates management
 vecDate <- seq(as.Date(dateStart), as.Date(dateStart)+nbDays-1, by = 'day')
@@ -87,14 +83,19 @@ print(paste('Extraction for layer',layerID,' Number of cells :',cellsPerLayer[la
 # Simulated data storage loop
 for (y in (yearStart:(yearEnd-1)))
 {
-  fileSim <- paste(workingDirectory,'Data/',simName,'/',typeFile,'.',y,y+1,'.bin',sep='')
-  f_isFileReachable(fileSim, 0, 1)
+  fileSimOne <- paste(workingDirectory,'Data/',simNameOne,'/',typeFile,'.',y,y+1,'.bin',sep='')
+  fileSimTwo <- paste(workingDirectory,'Data/',simNameTwo,'/',typeFile,'.',y,y+1,'.bin',sep='')
+  
+  f_isFileReachable(fileSimOne, 0, 1)
+  f_isFileReachable(fileSimTwo, 0, 1)
   
   nbDays <- 365
   if ((y+1)%%4 == 0) nbDays <- 366
   
-  binfile = file(fileSim, 'rb')
-  print(paste('Reading for binary file :',fileSim,' in progress...'))
+  binfileOne = file(fileSimOne, 'rb')
+  binfileTwo = file(fileSimTwo, 'rb')
+  
+  print(paste('Reading for binary files in progress...'))
   
   for (d in (1:nbDays))
   {
@@ -102,24 +103,26 @@ for (y in (yearStart:(yearEnd-1)))
     
     for (r in (1:nbRecAqMbFile))
     {
-      nbAqCells = readBin(binfile, integer(), size = 4, endian = 'little')
-      recValues = readBin(binfile, double(), n = nbAqCells, size = 8, endian = 'little')
-      nbAqCells = readBin(binfile, integer(), size = 4, endian = 'little')
+      nbAqCells = readBin(binfileOne, integer(), size = 4, endian = 'little')
+      recValuesOne = readBin(binfileOne, double(), n = nbAqCells, size = 8, endian = 'little')
+      nbAqCells = readBin(binfileOne, integer(), size = 4, endian = 'little')
+      
+      nbAqCells = readBin(binfileTwo, integer(), size = 4, endian = 'little')
+      recValuesTwo = readBin(binfileTwo, double(), n = nbAqCells, size = 8, endian = 'little')
+      nbAqCells = readBin(binfileTwo, integer(), size = 4, endian = 'little')   
       
       # Extracting simulated hydraulic heads
       if (r == 1)
       {
         if ((totalDayCounter >= absStartDay) && (totalDayCounter <= absEndDay))   # Only print the map if within period
         {
-          df <- data.frame(seq(AbsIDs[1], AbsIDs[2]),recValues[AbsIDs[1]:AbsIDs[2]]) 
+          df <- data.frame(seq(AbsIDs[1], AbsIDs[2]),recValuesOne[AbsIDs[1]:AbsIDs[2]],recValuesTwo[AbsIDs[1]:AbsIDs[2]]) 
+        
+          df <- cbind(df,df[,2]-df[,3]) 
+          colnames(df)<- c("id_ABS","Charge_Sc_One","Charge_Sc_Two","diff")
           
-          colnames(df)<- c("id_ABS","Charge")
-          dataShp <- merge(df,coteMNT,by="id_ABS") 
-          dataShp <- cbind(dataShp,dataShp[,2]-dataShp[,5]) # Operating on the mean value of the MNT
-          colnames(dataShp)<- c("id_ABS","Charge","min","max","moy","diff")   
-
           # Joining
-          spatialJoin <- inner_join(dataShp,myShapefile, by = "id_ABS")
+          spatialJoin <- inner_join(df,myShapefile, by = "id_ABS")
 
           # Aesthetic settings
           myGraphOptions <- theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (33), hjust = 0.5),
@@ -135,21 +138,24 @@ for (y in (yearStart:(yearEnd-1)))
           # Plotting
           print(paste('Rendering plot for day :',vecDate[totalDayCounter], sep=""))
           
-          pngTitle = paste("Piezo_jour_",totalDayCounter,".png",sep="")
+          pngTitle = paste("Diff_jour_",totalDayCounter,".png",sep="")
           png(file = pngTitle, width = 1920, height = 1080, units = "px")
           
-          figTitle <- paste('Sim : ',simName,' - Date : ',vecDate[totalDayCounter])
+          figTitle <- paste(simNameOne,'-',simNameTwo,' - Date : ',vecDate[totalDayCounter])
                  
           
           pl <- ggplot(spatialJoin) + myGraphOptions + ggtitle(label = figTitle) +
                 geom_sf(data = spatialJoin, aes(fill=diff, geometry = geometry), color=NA) +
-                scale_fill_gradientn(colours=c("deepskyblue1","deepskyblue2","deepskyblue3","blue","orangered1","orangered2","red","orchid"), na.value = "grey98",limits = c(-12,12)) +
+             #   scale_colour_gradientn(colours=c("deepskyblue1","deepskyblue2","deepskyblue3","blue","orangered1","orangered2","red","orchid"),
+              #                       na.value = "grey98",limits = c(-1,10)) +
+            scale_fill_viridis_c(option = "magma", limits = c(0, 5),direction = -1, na.value = "black") +
+            
                 theme(legend.key.size = unit(10, 'cm')) + 
                 theme(legend.key.height= unit(6.5, 'cm')) + 
                 theme(legend.key.width= unit(2, 'cm')) + 
                 theme(legend.title = element_text(size=25)) +
                 theme(legend.text = element_text(size=35)) + 
-                labs(fill = "Hauteur / MNT25 (m)")
+                labs(fill = "diff ZINI-POMP (m)")
           
           remove(dataShp,df)
           print(pl)
@@ -158,8 +164,9 @@ for (y in (yearStart:(yearEnd-1)))
       }
     }
   }
-  close(binfile)
-  print(paste('Reading for binary file :',fileSim,'done. File closed.'))
+  close(binfileOne)
+  close(binfileTwo)
+  print(paste('Reading for binary files done. File closed.'))
 }
 
 print("Done.")
