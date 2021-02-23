@@ -1,7 +1,7 @@
 # Clearing everything...
 rm(list = ls())
 
-workingDirectory  = 'E:/Github/appr/'
+workingDirectory  = 'E:/Github/appr/' 
 setwd(workingDirectory)
 
 # -------------------------------------------------------------------------------------------
@@ -32,16 +32,13 @@ for (f in files) {
 nbScenarios <- 6
 
 # Scenarios Names
-scNames <- c("SC_1910_R060","SC_1910_R070","SC_1910_R080","SC_1910_R080","SC_1910_R100","SC_1910_R115")  # A changer lorsque 0.9 aura run
+scNames <- c("SC_1910_R060","SC_1910_R070","SC_1910_R080","SC_1910_R080","SC_1910_R100","SC_1910_R115")   # A changer lorsque 090 aura tourné
 
 # Declination number of each scenarios
 nbDeclin <- 4
 
 # Declination names
 declinNames <- c("STOP","TOUS","POMP","NONE")
-
-# Vecteur des dates de max riv à Austerlitz (ATTENTION à l'ORDRE DE STOCKAGE !)  (doit être stocké en fonction de pos count)
-picDayAusterlitz <- c(180,180,180,180,181,181,181,181,182,182,182,182,182,182,182,182,183,183,183,183,183,183,183,183)
 
 # CaWaQS output file type
 typeFile <- "AQ_H"
@@ -70,9 +67,6 @@ absStartDay <- 150
 # Absolute ending day to print map
 absEndDay <- 250
 
-## Maximum flood date (= 31/01/1910)
-#datePic <- 184
-
 # -----------------------------------------------------------------------------------------------
 
 nbRecAqMbFile <- f_setNbRecOutputs(typeFile) 
@@ -81,8 +75,6 @@ print(paste("Number of daily binary records set to",nbRecAqMbFile,sep=" "))
 # (Ox) dates management
 vecDate <- seq(as.Date(dateStart), as.Date(dateStart)+nbDays-1, by = 'day')
 vecX <- seq(1, nbDays)
-
-#vecdatePic <- rep.int(datePic,sum(cellsPerLayer))
 
 # Computing absolute staring and ending layer cells
 AbsIDs <- f_InternToAbsIdAquifer(cellsPerLayer,layerID)
@@ -95,9 +87,6 @@ print(paste('Extraction for layer',layerID,' Number of cells :',cellsPerLayer[la
 # Storage matrix for all results
 matResults <- matrix(data = NA, nrow = sum(cellsPerLayer), ncol = nbScenarios*nbDeclin)
 
-# Vecteur des dates de pic de crus à Austerlitz 
-dateMaxAusterlitz <- matrix(data = NA, nrow = 1, ncol = nbScenarios*nbDeclin)
-
 countSim <- 0
 
 # Go !
@@ -108,11 +97,8 @@ for (sc in (1:nbScenarios))
     # Initializations
     totalDayCounter <- 0
     countSim <- countSim + 1
-    maxAusterlitz <- -999.0
-    dateAusterlitz <- 0
-    vecTimeAQ <- replicate(sum(cellsPerLayer), 0)
-    vecMaxiH <- replicate(sum(cellsPerLayer), -999)
-    
+    vecMaxiH <- replicate(sum(cellsPerLayer), -9999.0)
+   
     # Simulated data storage loop
     for (y in (yearStart:(yearEnd-1)))
     {
@@ -135,6 +121,8 @@ for (sc in (1:nbScenarios))
           recValues = readBin(binfile, double(), n = nbAqCells, size = 8, endian = 'little')
           nbAqCells = readBin(binfile, integer(), size = 4, endian = 'little')
           
+          print(paste(scNames[sc],'_',declinNames[dec],' - ',totalDayCounter,sep=""))
+          
           # Extracting simulated hydraulic heads
           if (r == 1)
           {
@@ -145,14 +133,6 @@ for (sc in (1:nbScenarios))
                 if (recValues[i] > vecMaxiH[i])
                 {
                   vecMaxiH[i] <- recValues[i]
-                  vecTimeAQ[i] <- totalDayCounter
-                }
-                
-                # date du maximum a Austerlitz
-                if (recValues[5784] > maxAusterlitz)
-                {
-                  maxAusterlitz <- recValues[5784]
-                  dateAusterlitz <- totalDayCounter
                 }
               }
             }
@@ -163,66 +143,64 @@ for (sc in (1:nbScenarios))
       print(paste('Reading for binary file :',fileSim,'done. File closed.'))
     }
     
-    propagationTime <- vecTimeAQ-picDayAusterlitz[countSim]  # On va chercher la date du pic associé au scénario
-
-       matResults[,countSim] <- propagationTime
-    
-    dateMaxAusterlitz[,countSim] <- dateAusterlitz
+    # Post-traitement de la déclinaison en cours
+    matResults[,countSim] <- vecMaxiH
     
     # Plotting for the current scenario and declination
     
-    df <- data.frame(seq(AbsIDs[1], AbsIDs[2]),propagationTime[AbsIDs[1]:AbsIDs[2]]) 
-    colnames(df)<- c("id_ABS","Propagation")
+    df <- data.frame(seq(AbsIDs[1], AbsIDs[2]),vecMaxiH[AbsIDs[1]:AbsIDs[2]]) 
+    colnames(df)<- c("id_ABS","MaxAQ")
     
     # Joining
     spatialJoin <- inner_join(df,myShapefile, by = "id_ABS")
-    
+        
     # Aesthetic settings
     myGraphOptions <- theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (33), hjust = 0.5),
-                            plot.subtitle = element_text(hjust = 0.5),
-                            legend.title = element_text(colour = "black",  face = "bold.italic", family = "Helvetica"),
-                            legend.text = element_text(face = "italic", colour="black",family = "Helvetica"),
-                            legend.position="right", legend.direction="vertical",
-                            axis.title = element_text(family = "Helvetica", size = (33), colour = "black"),
-                            axis.text.y = element_text(family = "Helvetica", colour = "black", size = (15), angle = 90, hjust = 0.5),
-                            axis.text.x = element_text(family = "Helvetica", colour = "black", angle = 0, hjust = 0.5, size = (15)),
-                            plot.margin = unit(c(1,1,1,1), "cm"))
-    
+                             plot.subtitle = element_text(hjust = 0.5),
+                             legend.title = element_text(colour = "black",  face = "bold.italic", family = "Helvetica"),
+                             legend.text = element_text(face = "italic", colour="black",family = "Helvetica"),
+                             legend.position="right", legend.direction="vertical",
+                             axis.title = element_text(family = "Helvetica", size = (33), colour = "black"),
+                             axis.text.y = element_text(family = "Helvetica", colour = "black", size = (15), angle = 90, hjust = 0.5),
+                             axis.text.x = element_text(family = "Helvetica", colour = "black", angle = 0, hjust = 0.5, size = (15)),
+                             plot.margin = unit(c(1,1,1,1), "cm"))
+      
     # Plotting
     print("Plotting")
-    
-    pngTitle = paste(paste("AQ_propagation_",absStartDay,"-",absEndDay,"_",scNames[sc],'_',declinNames[dec],".png",sep=""))
+        
+    pngTitle = paste(paste("AQ_max_period_",absStartDay,"-",absEndDay,"_",scNames[sc],'_',declinNames[dec],".png",sep=""))
     png(file = pngTitle, width = 1920, height = 1080, units = "px")
-    
-    figTitle <- paste("Duree_propagation_period_",absStartDay,"-",absEndDay,"-",scNames[sc],'_',declinNames[dec],sep="")
-    
-    pl <-   ggplot(spatialJoin) + myGraphOptions + ggtitle(label = figTitle) +
-      geom_sf(data = spatialJoin, aes(fill=Propagation, geometry = geometry), color=NA) + 
-      scale_fill_gradientn(colours=c("#05aae8","#058fe8","#0546e8","#FF0000","#FF5300","#FFA800","#FAFB01","#A4FB55","#4FFBA8","#00F7F6","#07A4F6","#1050F7","#1800F7"),
-                           na.value = "transparent",
-                           guide = "colourbar",
-                           aesthetics = "fill",limits=c(-3,9), breaks=c(-3,-2,-1,0,1,2,3,4,5,6,7,8,9)) +
-      theme(legend.key.size = unit(10, 'cm')) + 
-      theme(legend.key.height= unit(6.5, 'cm')) + 
-      theme(legend.key.width= unit(2, 'cm')) + 
-      theme(legend.title = element_text(size=25)) +
-      theme(legend.text = element_text(size=35)) + 
-      labs(fill = "Propagation AQ-HYD (jours)")
-    
+        
+    figTitle <- paste(scNames[sc],'_',declinNames[dec]," - AQ_max_period_",absStartDay,"-",absEndDay,sep="")
+        
+    pl <- ggplot(spatialJoin)  + myGraphOptions + ggtitle(label = figTitle) +
+         geom_sf(data = spatialJoin, aes(fill=MaxAQ, geometry = geometry), color=NA) + 
+         theme(legend.key.size = unit(10, 'cm')) + 
+         theme(legend.key.height= unit(6.5, 'cm')) + 
+         theme(legend.key.width= unit(2, 'cm')) + 
+         theme(legend.title = element_text(size=25)) +
+         theme(legend.text = element_text(size=35)) + 
+         labs(fill = "Amplitude (m)") +
+         scale_fill_gradientn(colours=rainbow(10), #c("#ebf5fb","#d6eaf8","#aed6f1","#85c1e9","#5dade2","#3498db","#3498db","#2e86c1","#1f618d","#1b4f72"),
+                              na.value = "transparent",guide = "colourbar",aesthetics = "fill", limits=c(0,40),breaks=c(0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40))
+        #   scale_fill_gradient(low = "blue",high = "red",space = "Lab",)
+        #  scale_fill_gradient(low="white",high="blue",space = "Lab")
+     #  #   scale_fill_viridis_c(option = "viridis", limits = c(2, 15),direction = -1) +
+     #  #      scale_fill_viridis_c(option="magma",space = "Lab",na.value = "transparent",guide = "colourbar",
+     # #    aesthetics = "fill", limits=c(20,40), direction=1) +
+     
     print(pl)
-    
     dev.off()
-    remove(df,propagationTime,maxAusterlitz,dateAusterlitz,vecTimeAQ,vecMaxiH)
-
-  
+    
+    remove(df,vecMaxiH)
   }
 }
 
 # Writing the global matrix for all runs
 dfMat <- as.data.frame(matResults)
-dfDate <- as.data.frame(dateMaxAusterlitz)
 
 columnNames <- vector()
+#columnNames <- append(columnNames,"id_ABS")
 
 for (sc in (1:nbScenarios))
 {
@@ -234,9 +212,6 @@ for (sc in (1:nbScenarios))
 }
 
 colnames(dfMat) <- columnNames
-colnames(dfDate) <- columnNames
-
-write.table(dfMat, file = "PROPAGATION.txt")
-write.table(dfDate, file = "DATE_PIC_AUSTERLITZ.txt")
+write.table(dfMat, file = "MaxAQ.txt")
 
 print("Done.")

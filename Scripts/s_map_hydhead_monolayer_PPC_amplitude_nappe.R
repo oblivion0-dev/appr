@@ -29,10 +29,10 @@ for (f in files) {
 # USER INPUTS ----------------------------------------------------------------------------------
 
 # Number of scenarios
-nbScenarios <- 2
+nbScenarios <- 6
 
 # Scenarios Names
-scNames <- c("SC_1910_R100","SC_1910_R115")
+scNames <- c("SC_1910_R060","SC_1910_R070","SC_1910_R080","SC_1910_R080","SC_1910_R100","SC_1910_R115")   # A adapter lorsque 0.9 aura run
 
 # Declination number of each scenarios
 nbDeclin <- 4
