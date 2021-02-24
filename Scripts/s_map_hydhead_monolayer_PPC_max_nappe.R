@@ -32,7 +32,7 @@ for (f in files) {
 nbScenarios <- 6
 
 # Scenarios Names
-scNames <- c("SC_1910_R060","SC_1910_R070","SC_1910_R080","SC_1910_R080","SC_1910_R100","SC_1910_R115")   # A changer lorsque 090 aura tourné
+scNames <- c("SC_1910_R060","SC_1910_R070","SC_1910_R080","SC_1910_R090","SC_1910_R100","SC_1910_R115")
 
 # Declination number of each scenarios
 nbDeclin <- 4
@@ -109,7 +109,7 @@ for (sc in (1:nbScenarios))
       if ((y+1)%%4 == 0) nbDays <- 366
       
       binfile = file(fileSim, 'rb')
-      print(paste('Reading for binary file :',fileSim,' in progress...'))
+     # print(paste('Reading for binary file :',fileSim,' in progress...'))
       
       for (d in (1:nbDays))
       {
@@ -121,7 +121,7 @@ for (sc in (1:nbScenarios))
           recValues = readBin(binfile, double(), n = nbAqCells, size = 8, endian = 'little')
           nbAqCells = readBin(binfile, integer(), size = 4, endian = 'little')
           
-          print(paste(scNames[sc],'_',declinNames[dec],' - ',totalDayCounter,sep=""))
+        #  print(paste(scNames[sc],'_',declinNames[dec],' - ',totalDayCounter,sep=""))
           
           # Extracting simulated hydraulic heads
           if (r == 1)
@@ -139,8 +139,9 @@ for (sc in (1:nbScenarios))
           }
         }
       }
+      print(paste("maximum 346",scNames[sc],'_',declinNames[dec],":",vecMaxiH[346],sep=" "))
       close(binfile)
-      print(paste('Reading for binary file :',fileSim,'done. File closed.'))
+    #  print(paste('Reading for binary file :',fileSim,'done. File closed.'))
     }
     
     # Post-traitement de la déclinaison en cours

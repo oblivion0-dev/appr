@@ -29,10 +29,10 @@ for (f in files) {
 # USER INPUTS ----------------------------------------------------------------------------------
 
 # Number of scenarios
-nbScenarios <- 2
+nbScenarios <- 6
 
 # Scenarios Names
-scNames <- c("SC_1910_R100","SC_1910_R115")
+scNames <- c("SC_1910_R060","SC_1910_R070","SC_1910_R080","SC_1910_R090","SC_1910_R100","SC_1910_R115")
 
 # Declination number of each scenarios
 nbDeclin <- 4
@@ -65,10 +65,10 @@ cellsPerLayer <- c(16465,6192)
 layerID <- 1 # Couche PPC
 
 # Absolute starting day to print map (1 = First day of the [01/08/yearStart:31/07/yearEnd] period)
-absStartDay <- 150 
+absStartDay <- 175 
 
 # Absolute ending day to print map
-absEndDay <- 250
+absEndDay <- 215
 
 # -----------------------------------------------------------------------------------------------
 
@@ -89,7 +89,7 @@ AbsIDs <- f_InternToAbsIdAquifer(cellsPerLayer,layerID)
 myShapefile <- st_read("./Data/GRID_PPC/maillage_PPC.shp", stringsAsFactors = FALSE)
 
 # Storage matrix for all results
-matResults <- matrix(data = NA, nrow = sum(cellsPerLayer), ncol = nbScenarios*nbDeclin)
+matResults <- matrix(data = NA, nrow = cellsPerLayer[layerID], ncol = nbScenarios*nbDeclin)
 
 print(paste('Extraction for layer',layerID,' Number of cells :',cellsPerLayer[layerID],'Abs start point :',AbsIDs[1],'Abs end point :',AbsIDs[2]))
 
@@ -137,7 +137,7 @@ for (sc in (1:nbScenarios))
               colnames(df)<- c("id_ABS","Charge")
               dataShp <- merge(df,coteMNT,by="id_ABS") 
               diff <- dataShp[,2]-dataShp[,5]
-              dataShp <- cbind(dataShp,diff) # Operating on the mean value of the MNT
+              dataShp <- cbind(dataShp,diff) 
               
               matResults[,countSim] <- diff
               
@@ -160,15 +160,16 @@ for (sc in (1:nbScenarios))
               # Plotting
               print(paste('Rendering plot for day :',vecDate[totalDayCounter], sep=""))
               
-              pngTitle = paste("Piezo_jour_",totalDayCounter,".png",sep="")
+              pngTitle = paste(scNames[sc],'_',declinNames[dec],"_day_",totalDayCounter,".png",sep="")
               png(file = pngTitle, width = 1920, height = 1080, units = "px")
               
-              figTitle <- paste('Sim : ',simName,' - Date : ',vecDate[totalDayCounter])
+              figTitle <- paste(scNames[sc],'_',declinNames[dec],"_day_",vecDate[totalDayCounter])
               
               
               pl <- ggplot(spatialJoin) + myGraphOptions + ggtitle(label = figTitle) +
                 geom_sf(data = spatialJoin, aes(fill=diff, geometry = geometry), color=NA) +
-                scale_fill_gradientn(colours=c("deepskyblue1","deepskyblue2","deepskyblue3","blue","orangered1","orangered2","red","orchid"), na.value = "grey98",limits = c(-12,12)) +
+                scale_fill_gradientn(colours=c("deepskyblue2","deepskyblue2","deepskyblue3","deepskyblue4","blue","blue2","blue3","orangered1","orangered2","red"), na.value = "grey98",
+                                     limits = c(-12,4),breaks=c(-8,-4,0,1,2,3,4)) +
                 theme(legend.key.size = unit(10, 'cm')) + 
                 theme(legend.key.height= unit(6.5, 'cm')) + 
                 theme(legend.key.width= unit(2, 'cm')) + 
@@ -184,27 +185,9 @@ for (sc in (1:nbScenarios))
         }
       }
       close(binfile)
-      print(paste('Reading for binary file :',fileSim,'done. File closed.'))
+      print(paste('Reading for binary file :',scNames[sc],'_',declinNames[dec],'done. File closed.'))
     }
-    
-    
-    
-    
-    
-    
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 print("Done.")

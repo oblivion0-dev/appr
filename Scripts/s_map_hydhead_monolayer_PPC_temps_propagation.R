@@ -32,7 +32,7 @@ for (f in files) {
 nbScenarios <- 6
 
 # Scenarios Names
-scNames <- c("SC_1910_R060","SC_1910_R070","SC_1910_R080","SC_1910_R080","SC_1910_R100","SC_1910_R115")  # A changer lorsque 0.9 aura run
+scNames <- c("SC_1910_R060","SC_1910_R070","SC_1910_R080","SC_1910_R090","SC_1910_R100","SC_1910_R115")  # A changer lorsque 0.9 aura run
 
 # Declination number of each scenarios
 nbDeclin <- 4
@@ -41,7 +41,12 @@ nbDeclin <- 4
 declinNames <- c("STOP","TOUS","POMP","NONE")
 
 # Vecteur des dates de max riv à Austerlitz (ATTENTION à l'ORDRE DE STOCKAGE !)  (doit être stocké en fonction de pos count)
-picDayAusterlitz <- c(180,180,180,180,181,181,181,181,182,182,182,182,182,182,182,182,183,183,183,183,183,183,183,183)
+picDayAusterlitz <- c(180,180,180,180,
+                      181,181,181,181,
+                      182,182,182,182,
+                      182,182,182,182,
+                      184,184,184,184,
+                      183,183,183,183)
 
 # CaWaQS output file type
 typeFile <- "AQ_H"
@@ -198,10 +203,10 @@ for (sc in (1:nbScenarios))
     
     pl <-   ggplot(spatialJoin) + myGraphOptions + ggtitle(label = figTitle) +
       geom_sf(data = spatialJoin, aes(fill=Propagation, geometry = geometry), color=NA) + 
-      scale_fill_gradientn(colours=c("#05aae8","#058fe8","#0546e8","#FF0000","#FF5300","#FFA800","#FAFB01","#A4FB55","#4FFBA8","#00F7F6","#07A4F6","#1050F7","#1800F7"),
+      scale_fill_gradientn(colours=c("#FF0000","#FF0000","#FF5300","#FFA800","#FAFB01","#A4FB55","#4FFBA8","#00F7F6","#07A4F6","#1050F7","#1800F7"),   #"#05aae8","#058fe8",
                            na.value = "transparent",
                            guide = "colourbar",
-                           aesthetics = "fill",limits=c(-3,9), breaks=c(-3,-2,-1,0,1,2,3,4,5,6,7,8,9)) +
+                           aesthetics = "fill",limits=c(-1,9), breaks=c(-1,0,1,2,3,4,5,6,7,8,9)) +
       theme(legend.key.size = unit(10, 'cm')) + 
       theme(legend.key.height= unit(6.5, 'cm')) + 
       theme(legend.key.width= unit(2, 'cm')) + 

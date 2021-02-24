@@ -30,7 +30,7 @@ for (f in files) {
 simname1 <- 'SC_1910_R060_STOP'
 simname2 <- 'SC_1910_R070_STOP'
 simname3 <- 'SC_1910_R080_STOP'
-simname4 <- 'SC_1910_R080_STOP'     # a changer lorsque 090 aura tourné
+simname4 <- 'SC_1910_R090_STOP'
 simname5 <- 'SC_1910_R100_STOP'
 simname6 <- 'SC_1910_R115_STOP'
 

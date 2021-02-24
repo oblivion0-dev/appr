@@ -32,7 +32,13 @@ for (f in files) {
 nbScenarios <- 6
 
 # Scenarios Names
-scNames <- c("SC_1910_R060","SC_1910_R070","SC_1910_R080","SC_1910_R080","SC_1910_R100","SC_1910_R115")   # A adapter lorsque 0.9 aura run
+scNames <- c("SC_1910_R060","SC_1910_R070","SC_1910_R080","SC_1910_R090","SC_1910_R100","SC_1910_R115") 
+
+#Scenarios short names
+scShort <- c("R0.60","R0.70","R0.80","R0.90","R1.00","R1.15") 
+
+# Declination name
+decNamesShort <- c("ZINI","Arrêt généralisé","Pompages persistants","Sans pompages") 
 
 # Declination number of each scenarios
 nbDeclin <- 4
@@ -175,10 +181,10 @@ for (sc in (1:nbScenarios))
     # Plotting
     print("Plotting")
         
-    pngTitle = paste(paste("AQ_amplitude_period_",absStartDay,"-",absEndDay,"_",scNames[sc],'_',declinNames[dec],".png",sep=""))
-    png(file = pngTitle, width = 1920, height = 1080, units = "px")
+    pngTitle = paste(paste(scNames[sc],'-',declinNames[dec],".png",sep=""))
+    png(file = pngTitle, width = 1200, height = 1200, units = "px")
         
-    figTitle <- paste(scNames[sc],'_',declinNames[dec]," - AQ_amplitude_period_",absStartDay,"-",absEndDay,sep="")
+    figTitle <- paste("Scénario ",scShort[sc],' - Configuration : ',decNamesShort[dec],sep="")
         
     pl <- ggplot(spatialJoin)  + myGraphOptions + ggtitle(label = figTitle) +
          geom_sf(data = spatialJoin, aes(fill=Amplitude, geometry = geometry), color=NA) + 
@@ -194,31 +200,31 @@ for (sc in (1:nbScenarios))
         #  scale_fill_gradient(low="white",high="blue",space = "Lab")
      #  #   scale_fill_viridis_c(option = "viridis", limits = c(2, 15),direction = -1) +
      #  #      scale_fill_viridis_c(option="magma",space = "Lab",na.value = "transparent",guide = "colourbar",
-     # #    aesthetics = "fill", limits=c(20,40), direction=1) +
+      # #    aesthetics = "fill", limits=c(20,40), direction=1) +
+      
+     print(pl)
+     dev.off()
      
-    print(pl)
-    dev.off()
-    
-    remove(df,amplitude)
-  }
-}
-
-# Writing the global matrix for all runs
-dfMat <- as.data.frame(matResults)
-
-columnNames <- vector()
-#columnNames <- append(columnNames,"id_ABS")
-
-for (sc in (1:nbScenarios))
-{
-  for (dec in (1:nbDeclin))
-  {
-    chaine <- paste(scNames[sc],'_',declinNames[dec],sep="")
-    columnNames <- append(columnNames,chaine)
-  }
-}
-
-colnames(dfMat) <- columnNames
-write.table(dfMat, file = "AMPLITUDES.txt")
-
-print("Done.")
+     remove(df,amplitude)
+   }
+ }
+ 
+ # Writing the global matrix for all runs
+ dfMat <- as.data.frame(matResults)
+ 
+ columnNames <- vector()
+ #columnNames <- append(columnNames,"id_ABS")
+ 
+ for (sc in (1:nbScenarios))
+ {
+   for (dec in (1:nbDeclin))
+   {
+     chaine <- paste(scNames[sc],'_',declinNames[dec],sep="")
+     columnNames <- append(columnNames,chaine)
+   }
+ }
+ 
+ colnames(dfMat) <- columnNames
+ write.table(dfMat, file = "AMPLITUDES.txt")
+ 
+ print("Done.")
