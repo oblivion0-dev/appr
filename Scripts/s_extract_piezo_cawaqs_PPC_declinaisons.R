@@ -52,6 +52,9 @@ layerNames <- c("1-PPC","2-Craie")
 # Absolute path to the piezometer attributes text file
 caracPiezo <- paste(workingDirectory,'Data/liste_piezo_PPC.txt',sep="")
 
+# Absolute path of the MNT elevation
+MNTFile <- paste(workingDirectory,'Data/COTE_MNT.txt',sep="")
+
 f_FileInformation('piezo_info') # To remind the user the expected structur of the 'caracPiezo' file
 
 # Absolute path to the folder containing the output binary files
@@ -100,6 +103,9 @@ nbRecBinFile <- f_setNbRecOutputs(outputType)
 # Loading piezometers properties
 properties <- read.table(caracPiezo, header = FALSE, na.strings = 'NA')
 nbPiezo <- length(properties[,1])
+
+# Storage of the MNT elevation
+MNT <- read.table(MNTFile, header = TRUE, na.strings = 'NA')
 
 print(paste('Informations read for',nbPiezo,'piezometers.',sep=' '))
 
@@ -195,19 +201,33 @@ for (y in (yearStart:(yearEnd-1)))
 # Plotting loop 
 for (i in (1:nbPiezo))
 {
-
+   matMNT <- matrix(data = NA, nrow = nbDays, ncol = 4)
+   
+   matMNT[,1] <- vecX
+   matMNT[,2] <- MNT[properties[i,9],2]
+   matMNT[,3] <- MNT[properties[i,9],3]
+   matMNT[,4] <- MNT[properties[i,9],4]
+      
   # Setting title
-  figTitle <- paste("Scenario :",scenarioName,"- Lieu :",properties[i,4],sep=" ")
+  figTitle <- paste("Scenario :",scenarioName,"-",properties[i,4],sep=" ")
       
   # Plotting
   dataFrame1 <- as.data.frame(matData1)    
   dataFrame2 <- as.data.frame(matData2)    
   dataFrame3 <- as.data.frame(matData3)    
+  dataFrameMNT <- as.data.frame(matMNT)
   
    pl =  ggplot(dataFrame1) +
-         geom_line(aes(x = dataFrame1[,1], y = dataFrame1[,2*i+1], color = 'Arrêt ZINI'), size = 0.7, alpha = 0.9)  +
-         geom_line(aes(x = dataFrame2[,1], y = dataFrame2[,2*i+1], color = 'Pompages persistants'), size = 0.4, alpha = 0.5)  +
-         geom_line(aes(x = dataFrame3[,1], y = dataFrame3[,2*i+1], color = 'Arrêt global des pompages'), size = 0.4, alpha = 0.5)  +
+         geom_line(aes(x = dataFrame1[,1], y = dataFrame1[,2*i+1], color = '(1) Arrêt ZINI'), size = 0.7, alpha = 0.9)  +
+         geom_line(aes(x = dataFrame2[,1], y = dataFrame2[,2*i+1], color = '(2) Pompages persistants'), size = 0.4, alpha = 0.5)  +
+         geom_line(aes(x = dataFrame3[,1], y = dataFrame3[,2*i+1], color = '(3) Arrêt global des pompages'), size = 0.4, alpha = 0.5)  +
+         geom_line(aes(x = dataFrameMNT[,1], y = dataFrameMNT[,2], color = '(4) MNT - Cote min.'), size = 0.4, alpha = 0.5, linetype = "dashed")  +
+         geom_line(aes(x = dataFrameMNT[,1], y = dataFrameMNT[,3], color = '(5) MNT - Cote max.'), size = 0.4, alpha = 0.5, linetype = "dashed")  +
+         geom_line(aes(x = dataFrameMNT[,1], y = dataFrameMNT[,4], color = '(6) MNT - Cote moyenne'), size = 0.8, alpha = 0.8)  +
+         geom_label(label=paste(signif(dataFrameMNT[,2],3),"mNGF",sep=" "), x=285,y=dataFrameMNT[,2],label.padding = unit(0.30, "lines"), label.size = 0.25, color = "black", fill="white") +
+         geom_label(label=paste(signif(dataFrameMNT[,3],3),"mNGF",sep=" "), x=285,y=dataFrameMNT[,3],label.padding = unit(0.30, "lines"), label.size = 0.25, color = "black", fill="white") +
+         geom_label(label=paste(signif(dataFrameMNT[,4],3),"mNGF",sep=" "), x=285,y=dataFrameMNT[,4],label.padding = unit(0.30, "lines"), label.size = 0.25, color = "black", fill="white") +
+      
          ggtitle(label = figTitle) + 
          labs(x = 'Temps (jours)', y = 'Charge hydraulique (mNGF)', 
          caption = paste('CaWaQS',versionID,' - ',modelName,sep=''))
@@ -226,14 +246,16 @@ for (i in (1:nbPiezo))
    # Printing graphs out...
    print(paste("Plotting : ",i,'out of',nbPiezo))
      
-   print(pl + myGraphOptions + scale_color_manual(values=c("blue", "red","green4")) +
+   print(pl + myGraphOptions + scale_color_manual(values=c("blue", "red","green4","grey10","grey10","black")) +
          labs(color = "Code couleur : ") +
          scale_x_continuous(limits=c(startGraph, endGraph),breaks=c(154,161,168,175,182,189,196,203,210,217,224,231,238),
                             labels=c("01/01/1910","08/01/1910","15/01/1910","22/01/1910","29/01/1910","05/02/1910","12/02/1910",
                                      "19/02/1910","26/02/1910","05/03/1910","12/03/1910","19/03/1910","26/03/1910")) +
          ggtitle(label = figTitle))
-
+   
+   remove(matMNT)
 }
+
 # Closing pdf
 dev.off()
 

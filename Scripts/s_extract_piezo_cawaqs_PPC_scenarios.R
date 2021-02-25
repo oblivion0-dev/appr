@@ -54,6 +54,9 @@ caracPiezo <- paste(workingDirectory,'Data/liste_piezo_PPC.txt',sep="")
 
 f_FileInformation('piezo_info') # To remind the user the expected structur of the 'caracPiezo' file
 
+# Absolute path of the MNT elevation
+MNTFile <- paste(workingDirectory,'Data/COTE_MNT.txt',sep="")
+
 # Absolute path to the folder containing the output binary files
 simFolder1 <- paste(workingDirectory,'Data/',simname1,sep ="")
 simFolder2 <- paste(workingDirectory,'Data/',simname2,sep ="")
@@ -112,6 +115,9 @@ pdf(outputPdfFile, height = 7, width = 10)
 # (Ox) dates management
 vecX <- seq(1, nbDays)
 vecDate <- seq(as.Date(dateStart), as.Date(dateStart)+nbDays-1, by = 'day')
+
+# Storage of the MNT elevation
+MNT <- read.table(MNTFile, header = TRUE, na.strings = 'NA')
 
 # Various initializations
 matData1 <- matrix(data = NA, nrow = nbDays, ncol = 2*nbPiezo+1)
@@ -233,7 +239,15 @@ for (y in (yearStart:(yearEnd-1)))
 # Plotting loop 
 for (i in (1:nbPiezo))
 {
-
+   
+   matMNT <- matrix(data = NA, nrow = nbDays, ncol = 4)
+   
+   matMNT[,1] <- vecX
+   matMNT[,2] <- MNT[properties[i,9],2]
+   matMNT[,3] <- MNT[properties[i,9],3]
+   matMNT[,4] <- MNT[properties[i,9],4]
+   
+   
   # Setting title
   figTitle <- paste("Lieu :",properties[i,4],sep=" ")
       
@@ -244,15 +258,21 @@ for (i in (1:nbPiezo))
   dataFrame4 <- as.data.frame(matData4)    
   dataFrame5 <- as.data.frame(matData5)    
   dataFrame6 <- as.data.frame(matData6)    
+  dataFrameMNT <- as.data.frame(matMNT)
   
    pl =  ggplot(dataFrame1) +
-         geom_line(aes(x = dataFrame1[,1], y = dataFrame1[,2*i+1], color = 'R0.60'), size = 0.2, alpha = 1.0)  +
-         geom_line(aes(x = dataFrame2[,1], y = dataFrame2[,2*i+1], color = 'R0.70'), size = 0.3, alpha = 1.0)  +
-         geom_line(aes(x = dataFrame3[,1], y = dataFrame3[,2*i+1], color = 'R0.80'), size = 0.4, alpha = 1.0)  +
-         geom_line(aes(x = dataFrame4[,1], y = dataFrame4[,2*i+1], color = 'R0.90'), size = 0.5, alpha = 1.0)  +
-         geom_line(aes(x = dataFrame5[,1], y = dataFrame5[,2*i+1], color = 'R1.00'), size = 0.6, alpha = 1.0)  +
-         geom_line(aes(x = dataFrame6[,1], y = dataFrame6[,2*i+1], color = 'R1.15'), size = 0.7, alpha = 1.0)  +
-      
+         geom_line(aes(x = dataFrame1[,1], y = dataFrame1[,2*i+1], color = '(1) R0.60'), size = 0.2, alpha = 1.0)  +
+         geom_line(aes(x = dataFrame2[,1], y = dataFrame2[,2*i+1], color = '(2) R0.70'), size = 0.3, alpha = 1.0)  +
+         geom_line(aes(x = dataFrame3[,1], y = dataFrame3[,2*i+1], color = '(3) R0.80'), size = 0.4, alpha = 1.0)  +
+         geom_line(aes(x = dataFrame4[,1], y = dataFrame4[,2*i+1], color = '(4) R0.90'), size = 0.5, alpha = 1.0)  +
+         geom_line(aes(x = dataFrame5[,1], y = dataFrame5[,2*i+1], color = '(5) R1.00'), size = 0.6, alpha = 1.0)  +
+         geom_line(aes(x = dataFrame6[,1], y = dataFrame6[,2*i+1], color = '(6) R1.15'), size = 0.7, alpha = 1.0)  +
+         geom_line(aes(x = dataFrameMNT[,1], y = dataFrameMNT[,2], color = '(7) MNT - Cote min.'), size = 0.4, alpha = 0.5, linetype = "dashed")  +
+         geom_line(aes(x = dataFrameMNT[,1], y = dataFrameMNT[,3], color = '(8) MNT - Cote max.'), size = 0.4, alpha = 0.5, linetype = "dashed")  +
+         geom_line(aes(x = dataFrameMNT[,1], y = dataFrameMNT[,4], color = '(9) MNT - Cote moyenne'), size = 0.8, alpha = 0.8)  +
+         geom_label(label=paste(signif(dataFrameMNT[,2],3),"mNGF",sep=" "), x=285,y=dataFrameMNT[,2],label.padding = unit(0.30, "lines"), label.size = 0.25, color = "black", fill="white") +
+         geom_label(label=paste(signif(dataFrameMNT[,3],3),"mNGF",sep=" "), x=285,y=dataFrameMNT[,3],label.padding = unit(0.30, "lines"), label.size = 0.25, color = "black", fill="white") +
+         geom_label(label=paste(signif(dataFrameMNT[,4],3),"mNGF",sep=" "), x=285,y=dataFrameMNT[,4],label.padding = unit(0.30, "lines"), label.size = 0.25, color = "black", fill="white") +     
          ggtitle(label = figTitle) + 
          labs(x = 'Temps (jours)', y = 'Charge hydraulique (mNGF)', 
          caption = paste('CaWaQS',versionID,' - ',modelName,sep=''))
@@ -271,13 +291,15 @@ for (i in (1:nbPiezo))
    # Printing graphs out...
    print(paste("Plotting : ",i,'out of',nbPiezo))
      
-   print(pl + myGraphOptions + scale_color_manual(values=c("#ffc265", "#e88e05","#FF5733","#C70039","#900C3F","#581845")) +
+   print(pl + myGraphOptions + scale_color_manual(values=c("#ffc265", "#e88e05","#FF5733","#C70039","#900C3F","#581845","grey10","grey10","black")) +
          labs(color = "Code couleur : ") +
          scale_x_continuous(limits=c(startGraph, endGraph),breaks=c(154,161,168,175,182,189,196,203,210,217,224,231,238),
                             labels=c("01/01/1910","08/01/1910","15/01/1910","22/01/1910","29/01/1910","05/02/1910","12/02/1910",
                                      "19/02/1910","26/02/1910","05/03/1910","12/03/1910","19/03/1910","26/03/1910")) + 
          ggtitle(label = figTitle) +
          ggtitle(label = figTitle))
+   remove(matMNT)
+   
 }
 # Closing pdf
 dev.off()
