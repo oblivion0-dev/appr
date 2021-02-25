@@ -34,6 +34,9 @@ simname4 <- 'SC_1910_R090_STOP'
 simname5 <- 'SC_1910_R100_STOP'
 simname6 <- 'SC_1910_R115_STOP'
 
+# Scenario name
+scName <- "ZINI"
+
 # Type of CaWaQS-output file what are being read 
 outputType <- "AQ_H"
 
@@ -55,7 +58,7 @@ caracPiezo <- paste(workingDirectory,'Data/liste_piezo_PPC.txt',sep="")
 f_FileInformation('piezo_info') # To remind the user the expected structur of the 'caracPiezo' file
 
 # Absolute path of the MNT elevation
-MNTFile <- paste(workingDirectory,'Data/COTE_MNT.txt',sep="")
+MNTFile <- paste(workingDirectory,'Data/COTE_METRO.txt',sep="")
 
 # Absolute path to the folder containing the output binary files
 simFolder1 <- paste(workingDirectory,'Data/',simname1,sep ="")
@@ -98,7 +101,7 @@ piezoMax <- 60
 # END OF USER CORNER --------------------------------------------------------------------------------------
  
 # Pdf output filename
-outputPdfFile <- paste('output_piezo.pdf',sep='')
+outputPdfFile <- paste('output_piezo_scenario.pdf',sep='')
 
 # Setting the number of binary records
 nbRecBinFile <- f_setNbRecOutputs(outputType)
@@ -249,8 +252,8 @@ for (i in (1:nbPiezo))
    
    
   # Setting title
-  figTitle <- paste("Lieu :",properties[i,4],sep=" ")
-      
+  figTitle <- paste("Configuration : ",scName," / Localisation : ",properties[i,5]," : ",properties[i,4],sep="")
+
   # Plotting
   dataFrame1 <- as.data.frame(matData1)    
   dataFrame2 <- as.data.frame(matData2)    
@@ -267,12 +270,10 @@ for (i in (1:nbPiezo))
          geom_line(aes(x = dataFrame4[,1], y = dataFrame4[,2*i+1], color = '(4) R0.90'), size = 0.5, alpha = 1.0)  +
          geom_line(aes(x = dataFrame5[,1], y = dataFrame5[,2*i+1], color = '(5) R1.00'), size = 0.6, alpha = 1.0)  +
          geom_line(aes(x = dataFrame6[,1], y = dataFrame6[,2*i+1], color = '(6) R1.15'), size = 0.7, alpha = 1.0)  +
-         geom_line(aes(x = dataFrameMNT[,1], y = dataFrameMNT[,2], color = '(7) MNT - Cote min.'), size = 0.4, alpha = 0.5, linetype = "dashed")  +
-         geom_line(aes(x = dataFrameMNT[,1], y = dataFrameMNT[,3], color = '(8) MNT - Cote max.'), size = 0.4, alpha = 0.5, linetype = "dashed")  +
-         geom_line(aes(x = dataFrameMNT[,1], y = dataFrameMNT[,4], color = '(9) MNT - Cote moyenne'), size = 0.8, alpha = 0.8)  +
+         geom_line(aes(x = dataFrameMNT[,1], y = dataFrameMNT[,2], color = '(7) Alti min.'), size = 0.4, alpha = 0.5, linetype = "dashed")  +
+         geom_line(aes(x = dataFrameMNT[,1], y = dataFrameMNT[,3], color = '(8) Alti max.'), size = 0.4, alpha = 0.5, linetype = "dashed")  +
          geom_label(label=paste(signif(dataFrameMNT[,2],3),"mNGF",sep=" "), x=285,y=dataFrameMNT[,2],label.padding = unit(0.30, "lines"), label.size = 0.25, color = "black", fill="white") +
          geom_label(label=paste(signif(dataFrameMNT[,3],3),"mNGF",sep=" "), x=285,y=dataFrameMNT[,3],label.padding = unit(0.30, "lines"), label.size = 0.25, color = "black", fill="white") +
-         geom_label(label=paste(signif(dataFrameMNT[,4],3),"mNGF",sep=" "), x=285,y=dataFrameMNT[,4],label.padding = unit(0.30, "lines"), label.size = 0.25, color = "black", fill="white") +     
          ggtitle(label = figTitle) + 
          labs(x = 'Temps (jours)', y = 'Charge hydraulique (mNGF)', 
          caption = paste('CaWaQS',versionID,' - ',modelName,sep=''))
@@ -291,7 +292,7 @@ for (i in (1:nbPiezo))
    # Printing graphs out...
    print(paste("Plotting : ",i,'out of',nbPiezo))
      
-   print(pl + myGraphOptions + scale_color_manual(values=c("#ffc265", "#e88e05","#FF5733","#C70039","#900C3F","#581845","grey10","grey10","black")) +
+   print(pl + myGraphOptions + scale_color_manual(values=c("#ffc265", "#e88e05","#FF5733","#C70039","#900C3F","#581845","grey10","grey10")) +
          labs(color = "Code couleur : ") +
          scale_x_continuous(limits=c(startGraph, endGraph),breaks=c(154,161,168,175,182,189,196,203,210,217,224,231,238),
                             labels=c("01/01/1910","08/01/1910","15/01/1910","22/01/1910","29/01/1910","05/02/1910","12/02/1910",
