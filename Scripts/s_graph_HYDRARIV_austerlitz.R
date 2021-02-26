@@ -26,6 +26,7 @@ graphName <- "HYDRARIV_AUSTERLITZ"
 
 # Path to the file containing the values to plot
 datafile <- "Data/Cote_HYDRARIV_AUSTERLITZ.txt"
+dataObs <- "Data/Obs_austerlitz.txt"
 
 # Number of days of the time series
 nbDays <- 59
@@ -42,7 +43,8 @@ pdf(fileTitle, height = 7, width = 10)
 
 # Loading data table cointaining the values to plot
 data <- read.table(datafile, header = TRUE, na.strings = 'NA')
-
+obs <- read.table(dataObs, header = TRUE, na.strings = 'NA')
+  
 # Starting day of graph
 dateStart <- "1910-01-10"
 
@@ -65,19 +67,22 @@ vecDate <- seq(as.Date(dateStart), as.Date(dateStart)+nbDays-1, by = 'day')
 # # -------------------------------------------------------------------------------------
 
 # Setting title
-figTitle <- paste("Cotes HYDRARIV : la Seine à Paris-Austerlitz")
+figTitle <- paste("Cotes en rivière HYDRARIV")
      
 # Plotting
-dataFrame <- as.data.frame(data)    
+dataFrame <- as.data.frame(data)   
+obsdf <- as.data.frame(obs) 
 axeX <- as.data.frame(vecX)
 
 pl =  ggplot(dataFrame) +
-      geom_line(aes(x = axeX[,1], y = dataFrame[,2], color = 'R0.6'), size = 0.4, alpha = 1.0)  +
-      geom_line(aes(x = axeX[,1], y = dataFrame[,3], color = 'R0.7'), size = 0.4, alpha = 1.0)  +
-      geom_line(aes(x = axeX[,1], y = dataFrame[,4], color = 'R0.8'), size = 0.4, alpha = 1.0)  +
-      geom_line(aes(x = axeX[,1], y = dataFrame[,5], color = 'R0.9'), size = 0.4, alpha = 1.0)  +
-      geom_line(aes(x = axeX[,1], y = dataFrame[,6], color = 'R1.00'), size = 0.4, alpha = 1.0)  +
-      geom_line(aes(x = axeX[,1], y = dataFrame[,7], color = 'R1.15'), size = 0.4, alpha = 1.0)  +
+#      geom_line(aes(x = axeX[,1], y = dataFrame[,2], color = 'R0.6'), size = 0.4, alpha = 1.0)  +
+#      geom_line(aes(x = axeX[,1], y = dataFrame[,3], color = 'R0.7'), size = 0.4, alpha = 1.0)  +
+#      geom_line(aes(x = axeX[,1], y = dataFrame[,4], color = 'R0.8'), size = 0.4, alpha = 1.0)  +
+#      geom_line(aes(x = axeX[,1], y = dataFrame[,5], color = 'R0.9'), size = 0.4, alpha = 1.0)  +
+#      geom_line(aes(x = axeX[,1], y = dataFrame[,6], color = 'R1.00'), size = 0.4, alpha = 1.0)  +
+    geom_point(aes(x = axeX[,1], y = obsdf[,2], color = 'Mesures'), size = 2.5, alpha = 1.0)  +
+  
+      geom_line(aes(x = axeX[,1], y = dataFrame[,7], color = 'Simulation'), size = 0.8, alpha = 1.0)  +
       ggtitle(label = figTitle) + 
       labs(x = 'Temps (jours)', y = 'Cote en rivière (m NGF)', 
       caption = paste('Simulation : CaW2.93-Appl.PPC',sep=''))
@@ -86,8 +91,8 @@ pl =  ggplot(dataFrame) +
 # Aesthetic settings
 myGraphOptions <- theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5),
                   plot.subtitle = element_text(hjust = 0.5, size = (13)),
-                  legend.title = element_text(colour = "black",  face = "bold.italic", family = "Helvetica"),
-                  legend.text = element_text(face = "italic", colour="black",family = "Helvetica"),
+                  legend.title = element_text(colour = "black",  face = "bold.italic", family = "Helvetica",size = (18)),
+                  legend.text = element_text(face = "italic", colour="black",family = "Helvetica",size = (18)),
                   legend.position="top", legend.direction="horizontal",
                   axis.title = element_text(family = "Helvetica", size = (13), colour = "black"),
                   axis.text.y = element_text(family = "Helvetica", colour = "black", size = (18)),
@@ -98,8 +103,9 @@ myGraphOptions <- theme(plot.title = element_text(family = "Helvetica", face = "
 # Printing out...
 print(paste("Plotting..."))
       
-print(pl + myGraphOptions + scale_color_manual(values=c("#ffc265", "#e88e05","#FF5733","#C70039","#900C3F","#581845")) +
-        labs(color = "Code couleur : ") + 
+print(pl + myGraphOptions + scale_color_manual(values=c("red","black")) +
+  #values=c("#ffc265", "#e88e05","#FF5733","#C70039","#900C3F","#581845")) +
+        labs(color = "Code couleur : ") + ylim(26,36) +
         scale_x_continuous(
           limits=c(1, 60), 
           breaks=c(1,16,17,18,19,20,21,22,23,59), 
